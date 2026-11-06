@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch, clearClientToken } from '@/lib/client-fetch';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -48,8 +49,8 @@ export default function MyExamsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/auth/me').then((r) => r.json()),
-      fetch('/api/my/exams').then((r) => r.json()),
+      apiFetch('/api/auth/me').then((r) => r.json()),
+      apiFetch('/api/my/exams').then((r) => r.json()),
     ]).then(([me, exams]) => {
       if (me.code !== 0 || !me.data?.candidate) {
         router.replace('/login');
@@ -62,7 +63,8 @@ export default function MyExamsPage() {
   }, [router]);
 
   async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await apiFetch('/api/auth/logout', { method: 'POST' });
+    clearClientToken('candidate');
     router.replace('/login');
   }
 

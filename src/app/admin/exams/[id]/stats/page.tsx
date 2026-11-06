@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../layout';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +46,7 @@ export default function StatsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/exams/${exam.id}/stats`)
+    apiFetch(`/api/exams/${exam.id}/stats`)
       .then((r) => r.json())
       .then((json) => {
         if (json.code === 0) setStats(json.data);

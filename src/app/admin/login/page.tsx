@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch, saveClientToken } from '@/lib/client-fetch';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ export default function AdminLoginPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/admin/login', {
+      const res = await apiFetch('/api/auth/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim(), password }),
@@ -33,6 +34,7 @@ export default function AdminLoginPage() {
         setError(json.message || '登录失败');
         return;
       }
+      if (json.data?.token) saveClientToken('admin', json.data.token as string);
       router.push('/admin');
     } catch {
       setError('网络异常，请稍后再试');

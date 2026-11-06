@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../layout';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -47,7 +48,7 @@ export default function ResultsPage() {
   const [maxScore, setMaxScore] = useState('');
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/exams/${exam.id}/results`);
+    const res = await apiFetch(`/api/exams/${exam.id}/results`);
     const json = await res.json();
     if (json.code === 0) setRows(json.data.rows ?? []);
     setLoading(false);

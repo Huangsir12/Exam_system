@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { use, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -87,7 +88,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       setError('缺少答题记录参数');
       return;
     }
-    fetch(`/api/attempts/${attemptId}/result`)
+    apiFetch(`/api/attempts/${attemptId}/result`)
       .then((r) => r.json())
       .then((json) => {
         if (json.code !== 0) setError(json.message || '加载失败');

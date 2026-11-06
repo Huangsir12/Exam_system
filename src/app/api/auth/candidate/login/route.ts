@@ -1,6 +1,6 @@
 // 认证：考生登录（姓名 + 手机号；名单外用户可登录，但无法看到/进入未授权考试）
 import { NextResponse } from 'next/server';
-import { checkRateLimit, CANDIDATE_SESSION_COOKIE, createSession, writeLog } from '@/lib/auth';
+import { checkRateLimit, CANDIDATE_SESSION_COOKIE, createSession, sessionCookieOptions, writeLog } from '@/lib/auth';
 import { fail, isValidPhone, ok, withErrorHandling } from '@/lib/api';
 
 export const POST = withErrorHandling(async (request: Request): Promise<NextResponse> => {
@@ -30,12 +30,7 @@ export const POST = withErrorHandling(async (request: Request): Promise<NextResp
     targetId: phone,
   });
 
-  const res = ok({ name, phone });
-  res.cookies.set(CANDIDATE_SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 3 * 24 * 3600,
-  });
+  const res = ok({ name, phone, token });
+  res.cookies.set(CANDIDATE_SESSION_COOKIE, token, sessionCookieOptions(request));
   return res;
 });

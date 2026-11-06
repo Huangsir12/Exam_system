@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
   const [loadingFull, setLoadingFull] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/documents/${id}`)
+    apiFetch(`/api/documents/${id}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.code === 0) setDoc(json.data);
@@ -45,7 +46,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
     if (!fullContent) {
       setLoadingFull(true);
       try {
-        const res = await fetch(`/api/documents/${id}?full=1`);
+        const res = await apiFetch(`/api/documents/${id}?full=1`);
         const json = await res.json();
         if (json.code === 0) setFullContent(json.data.content_text ?? '');
       } finally {

@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch, saveClientToken } from '@/lib/client-fetch';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ export default function CandidateLoginPage() {
     if (!/^1\d{10}$/.test(phone)) return setError('请输入正确的手机号');
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/candidate/login', {
+      const res = await apiFetch('/api/auth/candidate/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), phone }),
@@ -31,6 +32,7 @@ export default function CandidateLoginPage() {
         setError(json.message || '登录失败');
         return;
       }
+      if (json.data?.token) saveClientToken('candidate', json.data.token as string);
       router.push('/exams');
     } catch {
       setError('网络异常，请稍后再试');

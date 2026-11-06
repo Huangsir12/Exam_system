@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,7 +39,7 @@ export default function DocumentsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/documents');
+    const res = await apiFetch('/api/documents');
     const json = await res.json();
     if (json.code === 0) setDocs(json.data);
     setLoading(false);
@@ -65,7 +66,7 @@ export default function DocumentsPage() {
       for (const file of Array.from(files)) {
         const fd = new FormData();
         fd.append('file', file);
-        const res = await fetch('/api/documents/upload', { method: 'POST', body: fd });
+        const res = await apiFetch('/api/documents/upload', { method: 'POST', body: fd });
         const json = await res.json();
         if (!res.ok || json.code !== 0) {
           setError(json.message || `「${file.name}」上传失败`);
@@ -84,7 +85,7 @@ export default function DocumentsPage() {
   async function triggerParse(id: string) {
     setParsingIds((prev) => new Set(prev).add(id));
     try {
-      await fetch(`/api/documents/${id}/parse`, { method: 'POST' });
+      await apiFetch(`/api/documents/${id}/parse`, { method: 'POST' });
     } finally {
       setParsingIds((prev) => {
         const next = new Set(prev);
@@ -100,7 +101,7 @@ export default function DocumentsPage() {
       ? `该文档已被 ${doc.used_count} 场考试引用。删除不影响已生成的试卷（题目快照已独立保存），确认删除？`
       : `确认删除「${doc.name}」？`;
     if (!window.confirm(warn)) return;
-    const res = await fetch(`/api/documents/${doc.id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/documents/${doc.id}`, { method: 'DELETE' });
     const json = await res.json();
     if (json.code !== 0) {
       setError(json.message || '删除失败');
@@ -112,7 +113,7 @@ export default function DocumentsPage() {
   async function handleRename(doc: Doc) {
     const name = renameValue.trim();
     if (!name) return;
-    await fetch(`/api/documents/${doc.id}`, {
+    await apiFetch(`/api/documents/${doc.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
@@ -122,7 +123,7 @@ export default function DocumentsPage() {
   }
 
   async function handleDownload(id: string) {
-    const res = await fetch(`/api/documents/${id}/download`);
+    const res = await apiFetch(`/api/documents/${id}/download`);
     const json = await res.json();
     if (json.code !== 0 || !json.data?.url) return;
     const response = await fetch(json.data.url);

@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +21,7 @@ export default function AdminDashboardPage() {
   const [data, setData] = useState<Overview | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/overview')
+    apiFetch('/api/admin/overview')
       .then((r) => r.json())
       .then((json) => {
         if (json.code === 0) setData(json.data);

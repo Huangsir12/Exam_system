@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -81,7 +82,7 @@ export default function TakeExamPage({ params }: { params: Promise<{ id: string 
     if (submittedRef.current) return;
     submittedRef.current = true;
     try {
-      const res = await fetch(`/api/attempts/${attemptId}/submit`, {
+      const res = await apiFetch(`/api/attempts/${attemptId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -105,7 +106,7 @@ export default function TakeExamPage({ params }: { params: Promise<{ id: string 
   const saveAnswer = useCallback(async (questionId: string, answer: unknown, isMarked: boolean) => {
     setSaveState('saving');
     try {
-      const res = await fetch(`/api/attempts/${attemptId}/answer`, {
+      const res = await apiFetch(`/api/attempts/${attemptId}/answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question_id: questionId, answer, marked: isMarked }),
@@ -130,7 +131,7 @@ export default function TakeExamPage({ params }: { params: Promise<{ id: string 
       setError('缺少答题记录参数');
       return;
     }
-    fetch(`/api/attempts/${attemptId}`)
+    apiFetch(`/api/attempts/${attemptId}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.code !== 0) {

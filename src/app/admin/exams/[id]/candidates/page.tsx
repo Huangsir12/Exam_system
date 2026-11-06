@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../layout';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ export default function CandidatesPage() {
   const editable = ['draft', 'pending'].includes(exam.status);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/exams/${exam.id}/candidates`);
+    const res = await apiFetch(`/api/exams/${exam.id}/candidates`);
     const json = await res.json();
     if (json.code === 0) setCandidates(json.data);
     setLoading(false);
@@ -91,7 +92,7 @@ export default function CandidatesPage() {
     setImporting(true);
     setMessage('');
     try {
-      const res = await fetch(`/api/exams/${exam.id}/candidates/import`, {
+      const res = await apiFetch(`/api/exams/${exam.id}/candidates/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rows: previewRows, mode: importMode }),
@@ -116,7 +117,7 @@ export default function CandidatesPage() {
       setMessage('请输入姓名和手机号');
       return;
     }
-    const res = await fetch(`/api/exams/${exam.id}/candidates`, {
+    const res = await apiFetch(`/api/exams/${exam.id}/candidates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: addName.trim(), phone: addPhone.trim() }),
@@ -134,7 +135,7 @@ export default function CandidatesPage() {
 
   async function saveEdit() {
     if (!editing) return;
-    const res = await fetch(`/api/exams/${exam.id}/candidates/${editing.id}`, {
+    const res = await apiFetch(`/api/exams/${exam.id}/candidates/${editing.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: editing.name.trim(), phone: editing.phone.trim() }),
@@ -150,14 +151,14 @@ export default function CandidatesPage() {
 
   async function remove(c: Candidate) {
     if (!window.confirm(`确认移除「${c.name}」？已开考人员的成绩记录会保留。`)) return;
-    await fetch(`/api/exams/${exam.id}/candidates/${c.id}`, { method: 'DELETE' });
+    await apiFetch(`/api/exams/${exam.id}/candidates/${c.id}`, { method: 'DELETE' });
     await load();
     reloadExam();
   }
 
   async function removeAll() {
     if (!window.confirm(`确认清空全部 ${candidates.length} 名考生？`)) return;
-    await fetch(`/api/exams/${exam.id}/candidates`, { method: 'DELETE' });
+    await apiFetch(`/api/exams/${exam.id}/candidates`, { method: 'DELETE' });
     await load();
     reloadExam();
   }
@@ -174,7 +175,7 @@ export default function CandidatesPage() {
   }
 
   async function exportCandidates() {
-    const res = await fetch(`/api/exams/${exam.id}/export?kind=candidates`);
+    const res = await apiFetch(`/api/exams/${exam.id}/export?kind=candidates`);
     if (!res.ok) {
       window.alert('导出失败');
       return;

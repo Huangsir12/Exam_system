@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../layout';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -51,7 +52,7 @@ export default function GeneratePage() {
     pushLog('开始智能出题任务…');
 
     try {
-      const res = await fetch(`/api/exams/${exam.id}/generate`, { method: 'POST' });
+      const res = await apiFetch(`/api/exams/${exam.id}/generate`, { method: 'POST' });
       if (!res.ok || !res.body) {
         const json = await res.json().catch(() => null);
         pushLog(`启动失败：${json?.message ?? res.statusText}`);

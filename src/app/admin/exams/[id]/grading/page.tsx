@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../layout';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -50,7 +51,7 @@ export default function GradingPage() {
   const [message, setMessage] = useState('');
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/exams/${exam.id}/grading`);
+    const res = await apiFetch(`/api/exams/${exam.id}/grading`);
     const json = await res.json();
     if (json.code === 0) {
       const list = (json.data.items ?? []) as GradingItem[];
@@ -101,7 +102,7 @@ export default function GradingPage() {
     }
     setSavingId(essay.answer_id);
     try {
-      const res = await fetch(`/api/exams/${exam.id}/grading/grade`, {
+      const res = await apiFetch(`/api/exams/${exam.id}/grading/grade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answer_id: essay.answer_id, score, comment: comments[essay.answer_id] ?? '' }),

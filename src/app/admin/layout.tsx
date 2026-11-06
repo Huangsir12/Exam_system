@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch, clearClientToken } from '@/lib/client-fetch';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -24,7 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (isLoginPage) return;
-    fetch('/api/auth/me')
+    apiFetch('/api/auth/me')
       .then((r) => r.json())
       .then((json) => {
         if (json.code !== 0 || !json.data?.admin) {
@@ -42,7 +43,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (isLoginPage) return <>{children}</>;
 
   async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await apiFetch('/api/auth/logout', { method: 'POST' });
+    clearClientToken('admin');
     router.replace('/admin/login');
   }
 

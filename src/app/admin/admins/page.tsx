@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ export default function AdminsPage() {
   const [resetting, setResetting] = useState(false);
 
   const load = useCallback(async () => {
-    const [meRes, listRes] = await Promise.all([fetch('/api/auth/me'), fetch('/api/admin/admins')]);
+    const [meRes, listRes] = await Promise.all([apiFetch('/api/auth/me'), apiFetch('/api/admin/admins')]);
     const meJson = await meRes.json();
     const listJson = await listRes.json();
     if (meJson.code === 0) setMeId(meJson.data?.admin?.id ?? '');
@@ -49,7 +50,7 @@ export default function AdminsPage() {
   async function handleAdd() {
     setAdding(true); setError('');
     try {
-      const res = await fetch('/api/admin/admins', {
+      const res = await apiFetch('/api/admin/admins', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(addForm),
@@ -64,7 +65,7 @@ export default function AdminsPage() {
 
   async function handleDelete(target: Admin) {
     if (!window.confirm(`确定删除管理员「${target.name}（${target.username}）」吗？其登录会话将立即失效。`)) return;
-    const res = await fetch(`/api/admin/admins/${target.id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/admin/admins/${target.id}`, { method: 'DELETE' });
     const json = await res.json();
     if (json.code !== 0) { setError(json.message ?? '删除失败'); return; }
     await load();
@@ -74,7 +75,7 @@ export default function AdminsPage() {
     const next = target.role === 'super' ? 'normal' : 'super';
     const label = next === 'super' ? '设为超级管理员' : '降为普通管理员';
     if (!window.confirm(`确定将「${target.name}」${label}吗？`)) return;
-    const res = await fetch(`/api/admin/admins/${target.id}`, {
+    const res = await apiFetch(`/api/admin/admins/${target.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: next }),
@@ -88,7 +89,7 @@ export default function AdminsPage() {
     if (!pwdTarget) return;
     setResetting(true); setError('');
     try {
-      const res = await fetch(`/api/admin/admins/${pwdTarget.id}`, {
+      const res = await apiFetch(`/api/admin/admins/${pwdTarget.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPwd }),

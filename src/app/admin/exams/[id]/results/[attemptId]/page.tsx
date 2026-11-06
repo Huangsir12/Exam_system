@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -73,7 +74,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`/api/attempts/${attemptId}/detail`)
+    apiFetch(`/api/attempts/${attemptId}/detail`)
       .then((r) => r.json())
       .then((json) => {
         if (json.code !== 0) setError(json.message || '加载失败');

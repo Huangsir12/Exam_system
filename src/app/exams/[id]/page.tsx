@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export default function ExamIntroPage({ params }: { params: Promise<{ id: string
   const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/my/exams/${id}`)
+    apiFetch(`/api/my/exams/${id}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.code !== 0) setError(json.message || '加载失败');
@@ -55,7 +56,7 @@ export default function ExamIntroPage({ params }: { params: Promise<{ id: string
         router.push(`/exams/${id}/take?attempt=${exam.in_progress_attempt_id}`);
         return;
       }
-      const res = await fetch('/api/attempts/start', {
+      const res = await apiFetch('/api/attempts/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ exam_id: id }),

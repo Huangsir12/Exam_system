@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { createContext, use, useCallback, useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -46,7 +47,7 @@ export default function ExamAdminLayout({
   const [error, setError] = useState('');
 
   const reload = useCallback(async () => {
-    const res = await fetch(`/api/exams/${id}`);
+    const res = await apiFetch(`/api/exams/${id}`);
     const json = await res.json();
     if (json.code !== 0) {
       setError(json.message || '考试不存在');

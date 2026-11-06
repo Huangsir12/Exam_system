@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ export default function AdminExamsPage() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/exams');
+    const res = await apiFetch('/api/exams');
     const json = await res.json();
     if (json.code === 0) setExams(json.data);
     setLoading(false);

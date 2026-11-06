@@ -1,11 +1,30 @@
 import crypto from 'crypto';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import type { SessionInfo } from '@/lib/types';
 
 // 管理员与考生使用相互独立的会话 Cookie，保证同一浏览器双端共存、互不顶号
 export const ADMIN_SESSION_COOKIE = 'exam_admin_session';
 export const CANDIDATE_SESSION_COOKIE = 'exam_candidate_session';
+
+/** 会话 Cookie 配置：HTTPS（含 iframe 嵌入预览）下需 SameSite=None; Secure 才会被浏览器接收与携带；HTTP 本地回退 Lax */
+export function sessionCookieOptions(request: Request): {
+  httpOnly: boolean;
+  sameSite: 'lax' | 'none';
+  secure: boolean;
+  path: string;
+  maxAge: number;
+} {
+  const forwarded = request.headers.get('x-forwarded-proto') ?? '';
+  const isHttps = forwarded === 'https' || request.url.startsWith('https://');
+  return {
+    httpOnly: true,
+    sameSite: isHttps ? 'none' : 'lax',
+    secure: isHttps,
+    path: '/',
+    maxAge: 3 * 24 * 3600,
+  };
+}
 export type SessionRole = 'admin' | 'candidate';
 
 export function sessionCookieFor(role: SessionRole): string {
@@ -56,8 +75,11 @@ export async function createSession(params: {
 }
 
 export async function getSession(role: SessionRole): Promise<SessionInfo | null> {
+  // 双通道：优先 Authorization 系请求头（localStorage token，免疫第三方 cookie 拦截），回退 cookie
+  const headerStore = await headers();
+  const headerToken = headerStore.get(role === 'admin' ? 'x-admin-token' : 'x-candidate-token');
   const cookieStore = await cookies();
-  const token = cookieStore.get(sessionCookieFor(role))?.value;
+  const token = headerToken ?? cookieStore.get(sessionCookieFor(role))?.value;
   if (!token) return null;
   const client = getSupabaseClient();
   const { data, error } = await client
@@ -106,8 +128,10 @@ export async function requireSuperAdmin(): Promise<SessionInfo> {
 }
 
 export async function destroySession(role: SessionRole): Promise<void> {
+  const headerStore = await headers();
+  const headerToken = headerStore.get(role === 'admin' ? 'x-admin-token' : 'x-candidate-token');
   const cookieStore = await cookies();
-  const token = cookieStore.get(sessionCookieFor(role))?.value;
+  const token = headerToken ?? cookieStore.get(sessionCookieFor(role))?.value;
   if (!token) return;
   const client = getSupabaseClient();
   const { error } = await client.from('sessions').delete().eq('token', token);

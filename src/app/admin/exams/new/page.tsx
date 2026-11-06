@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -62,7 +63,7 @@ export default function NewExamPage() {
     setStartTime(toLocalInput(start));
     setEndTime(toLocalInput(end));
 
-    fetch('/api/documents')
+    apiFetch('/api/documents')
       .then((r) => r.json())
       .then((json) => {
         if (json.code === 0) {
@@ -120,7 +121,7 @@ export default function NewExamPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/exams', {
+      const res = await apiFetch('/api/exams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

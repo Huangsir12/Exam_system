@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../layout';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -71,7 +72,7 @@ export default function PaperPage() {
     setMessage('');
     setConfirming(true);
     try {
-      const res = await fetch(`/api/exams/${exam.id}/confirm`, { method: 'POST' });
+      const res = await apiFetch(`/api/exams/${exam.id}/confirm`, { method: 'POST' });
       const json = await res.json();
       if (json.code !== 0) {
         setMessage(`确认失败：${json.message}`);
@@ -85,11 +86,11 @@ export default function PaperPage() {
   }
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/exams/${exam.id}/questions`);
+    const res = await apiFetch(`/api/exams/${exam.id}/questions`);
     const json = await res.json();
     if (json.code === 0) setQuestions(json.data);
     setLoading(false);
-    const vres = await fetch(`/api/exams/${exam.id}/validate`);
+    const vres = await apiFetch(`/api/exams/${exam.id}/validate`);
     const vjson = await vres.json();
     if (vjson.code === 0) setValidation(vjson.data);
   }, [exam.id]);
@@ -144,7 +145,7 @@ export default function PaperPage() {
 
   async function deleteQuestion(q: Question) {
     if (!window.confirm('确认删除这道题？')) return;
-    await fetch(`/api/questions/${q.id}`, { method: 'DELETE' });
+    await apiFetch(`/api/questions/${q.id}`, { method: 'DELETE' });
     await load();
     reloadExam();
   }
@@ -153,7 +154,7 @@ export default function PaperPage() {
     setRegeneratingId(q.id);
     setMessage('');
     try {
-      const res = await fetch(`/api/questions/${q.id}/regenerate`, { method: 'POST' });
+      const res = await apiFetch(`/api/questions/${q.id}/regenerate`, { method: 'POST' });
       const json = await res.json();
       if (json.code !== 0) {
         setMessage(`重新生成失败：${json.message}`);
@@ -174,7 +175,7 @@ export default function PaperPage() {
     [list[idx], list[swapIdx]] = [list[swapIdx], list[idx]];
     const orders = list.map((item, i) => ({ id: item.id, sort_order: i + 1 }));
     setQuestions(list.map((item, i) => ({ ...item, sort_order: i + 1 })));
-    await fetch(`/api/exams/${exam.id}/questions/reorder`, {
+    await apiFetch(`/api/exams/${exam.id}/questions/reorder`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orders }),

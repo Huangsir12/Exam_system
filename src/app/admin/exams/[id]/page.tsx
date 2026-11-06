@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from './layout';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ export default function ExamSettingsPage() {
     setMessage('');
     setPublishing(true);
     try {
-      const res = await fetch(`/api/exams/${exam.id}/publish`, { method: 'POST' });
+      const res = await apiFetch(`/api/exams/${exam.id}/publish`, { method: 'POST' });
       const json = await res.json();
       if (json.code !== 0) {
         setMessage(`发布失败：${json.message}`);
@@ -38,7 +39,7 @@ export default function ExamSettingsPage() {
     if (!window.confirm('归档后考试不可再修改，确认归档？')) return;
     setArchiving(true);
     try {
-      const res = await fetch(`/api/exams/${exam.id}/archive`, { method: 'POST' });
+      const res = await apiFetch(`/api/exams/${exam.id}/archive`, { method: 'POST' });
       const json = await res.json();
       if (json.code !== 0) {
         setMessage(`归档失败：${json.message}`);
@@ -54,7 +55,7 @@ export default function ExamSettingsPage() {
     if (!window.confirm('发布后考生即可查看成绩与解析，确认发布？')) return;
     setPublishingResults(true);
     try {
-      const res = await fetch(`/api/exams/${exam.id}/publish-results`, { method: 'POST' });
+      const res = await apiFetch(`/api/exams/${exam.id}/publish-results`, { method: 'POST' });
       const json = await res.json();
       if (json.code !== 0) {
         setMessage(`操作失败：${json.message}`);
