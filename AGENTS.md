@@ -5,7 +5,8 @@
 **智能考试系统**（一期）：组织内部考核平台。核心业务闭环：管理员上传知识文档（PDF/DOCX/TXT/MD）→ LLM 智能组卷 → 审核发布 → 名单内考生在线考试 → 客观题自动阅卷 + 简答题人工阅卷 → 成绩按规则公开 → 多维统计与 CSV 导出 → 操作日志留痕。
 
 - **两类角色**：管理员（账号密码登录）、考生（手机号验证码 + 姓名匹配名单登录）
-- **三种组卷一致性模式**：统一试卷 / 同卷乱序 / 随机等值（`paper_mode`: uniform/shuffle/random_equal）
+- **会话隔离**：管理员与考生使用独立 cookie（`exam_admin_session` / `exam_candidate_session`），同一浏览器双角色并存互不顶号；`/api/auth/me` 返回 `{admin, candidate}` 双角色状态
+- **两种组卷模式**：固定试卷 `fixed`（全员同卷，生成后需管理员确认 `confirmed_at` 才能发布，题目变更自动重置确认）/ 随机试卷 `random`（按配置 2 倍生成题库，考生 start 时随机抽题 + 题序选项乱序）；历史值 uniform/shuffle→fixed、random_equal→random，读取侧用 `normalizePaperMode` 兼容
 - **五种题型**：单选 single / 多选 multiple / 判断 judge / 填空 fill / 简答 essay
 
 ### 版本技术栈
@@ -39,7 +40,7 @@
 │   │   ├── auth.ts         # requireAdmin/requireCandidate/createSession/writeLog/rateLimit
 │   │   ├── types.ts        # 业务类型与常量（EXAM_STATUS/QUESTION_TYPES 等）
 │   │   ├── generator.ts    # LLM 出题：splitIntoChunks/buildPrompt/sanitizeQuestion/dedupeQuestions
-│   │   ├── grading.ts      # 评分 + 试卷快照 buildPaperSnapshot（三模式 + original_key 映射）
+│   │   ├── grading.ts      # 评分 + 试卷快照 buildPaperSnapshot（fixed/random + original_key 映射）
 │   │   └── docparse.ts     # 文档解析：FetchClient + 章节切分
 │   ├── storage/database/shared/schema.ts  # 11 张表定义（drizzle pgTable）
 │   └── server.ts           # 自定义服务端入口
@@ -62,7 +63,7 @@
 - **auth**: `admin/login` `candidate/send-code` `candidate/login` `logout` `me`
 - **admin**: `admin/overview` `admin/logs`
 - **documents**: `GET/POST documents` `upload` `[id](GET/DELETE)` `[id]/parse` `[id]/download`
-- **exams**: `GET/POST exams` `[id](GET/PATCH/DELETE)` `[id]/generate(SSE)` `validate` `publish` `publish-results` `archive` `questions(GET/POST)` `questions/reorder` `candidates(GET/POST/DELETE)` `candidates/import` `candidates/[cid](PATCH/DELETE)` `results` `stats` `grading(GET)` `grading/grade(POST)` `export?kind=results|candidates`
+- **exams**: `GET/POST exams` `[id](GET/PATCH/DELETE)` `[id]/generate(SSE)` `validate` `confirm` `publish` `publish-results` `archive` `questions(GET/POST)` `questions/reorder` `candidates(GET/POST/DELETE)` `candidates/import` `candidates/[cid](PATCH/DELETE)` `results` `stats` `grading(GET)` `grading/grade(POST)` `export?kind=results|candidates`
 - **questions**: `[id](PATCH/DELETE)` `[id]/regenerate(POST)`
 - **考生**: `my/exams` `my/exams/[id]` `attempts/start` `attempts/[id](GET)` `answer(POST)` `submit(POST)` `result` `detail`
 

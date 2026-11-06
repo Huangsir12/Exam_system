@@ -73,8 +73,8 @@ export default function AdminExamsPage() {
                         <span>时长 {exam.duration_minutes} 分钟</span>
                         <span>总分 {Number(exam.total_score)} 分</span>
                         <span>及格 {Number(exam.pass_score)} 分</span>
-                        {exam.generation_status === 'generating' && <span className="text-amber-600">智能出题中…</span>}
-                        {exam.generation_status === 'failed' && <span className="text-red-600">出题失败</span>}
+                        {exam.generation_status === 'generating' && <span className="text-amber-300">智能出题中…</span>}
+                        {exam.generation_status === 'failed' && <span className="text-red-300">出题失败</span>}
                       </div>
                     </div>
                     <StatusBadge status={exam.status} label={EXAM_STATUS_LABELS[exam.status] ?? exam.status} />

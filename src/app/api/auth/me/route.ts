@@ -1,15 +1,13 @@
-// 认证：获取当前会话信息
+// 认证：获取当前会话信息（管理员与考生会话相互独立，分别返回）
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { ok, withErrorHandling } from '@/lib/api';
 
 export const GET = withErrorHandling(async (): Promise<NextResponse> => {
-  const session = await getSession();
-  if (!session) return ok({ logged_in: false });
+  const [admin, candidate] = await Promise.all([getSession('admin'), getSession('candidate')]);
   return ok({
-    logged_in: true,
-    user_type: session.user_type,
-    user_name: session.user_name,
-    phone: session.phone,
+    logged_in: Boolean(admin || candidate),
+    admin: admin ? { user_name: admin.user_name } : null,
+    candidate: candidate ? { user_name: candidate.user_name, phone: candidate.phone } : null,
   });
 });

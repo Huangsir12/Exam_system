@@ -75,10 +75,10 @@ export const POST = withErrorHandling(async (request: Request, ctx: Ctx): Promis
     .single();
   if (error) throw new Error(`新增题目失败: ${error.message}`);
 
-  // 重算总分
+  // 重算总分；题目变更后固定试卷需重新确认
   const { data: qs } = await client.from('questions').select('score').eq('exam_id', id);
   const totalScore = (qs ?? []).reduce((s: number, q) => s + (q.score as number), 0);
-  await client.from('exams').update({ total_score: totalScore, updated_at: new Date().toISOString() }).eq('id', id);
+  await client.from('exams').update({ total_score: totalScore, confirmed_at: null, updated_at: new Date().toISOString() }).eq('id', id);
 
   await writeLog({
     operatorType: 'admin',

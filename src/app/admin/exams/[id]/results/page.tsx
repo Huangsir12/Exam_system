@@ -92,7 +92,7 @@ export default function ResultsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">
           应考 {rows.length} 人 · 已交卷 {submittedCount} 人
-          {gradingPending > 0 && <span className="text-amber-600 ml-2">{gradingPending} 份待阅卷</span>}
+          {gradingPending > 0 && <span className="text-amber-300 ml-2">{gradingPending} 份待阅卷</span>}
         </p>
         <div className="flex gap-2">
           {gradingPending > 0 && (
@@ -154,7 +154,7 @@ export default function ResultsPage() {
                     <td className="px-4 py-3 font-medium">{row.name}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{row.phone_masked}</td>
                     <td className="px-4 py-3">
-                      {SUBMITTED_STATUSES.includes(row.attempt_status) ? <span className="text-emerald-700">已交卷</span> : row.has_started ? <span className="text-amber-600">答题中</span> : <span className="text-muted-foreground">未开考</span>}
+                      {SUBMITTED_STATUSES.includes(row.attempt_status) ? <span className="text-emerald-300">已交卷</span> : row.has_started ? <span className="text-amber-300">答题中</span> : <span className="text-muted-foreground">未开考</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{row.submitted_at ? new Date(row.submitted_at).toLocaleString('zh-CN') : '—'}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{fmtDuration(row.duration_seconds)}</td>
@@ -163,14 +163,14 @@ export default function ResultsPage() {
                     <td className="px-4 py-3 text-right font-serif font-bold">{row.total_score ?? '—'}</td>
                     <td className="px-4 py-3">
                       {row.is_passed === null || row.is_passed === undefined ? '—' : (
-                        <span className={cn('text-xs font-medium', row.is_passed ? 'text-emerald-700' : 'text-red-700')}>
+                        <span className={cn('text-xs font-medium', row.is_passed ? 'text-emerald-300' : 'text-red-300')}>
                           {row.is_passed ? '及格' : '不及格'}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {row.grading_status === 'pending' ? <span className="text-xs text-amber-600">待阅卷</span>
-                        : row.grading_status === 'completed' ? <span className="text-xs text-emerald-700">已阅卷</span>
+                      {row.grading_status === 'pending' ? <span className="text-xs text-amber-300">待阅卷</span>
+                        : row.grading_status === 'completed' ? <span className="text-xs text-emerald-300">已阅卷</span>
                         : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
                     <td className="px-4 py-3">

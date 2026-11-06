@@ -77,7 +77,7 @@ export default function ExamIntroPage({ params }: { params: Promise<{ id: string
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center">
-          <AlertTriangle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+          <AlertTriangle className="w-10 h-10 text-amber-300 mx-auto mb-3" />
           <p className="text-foreground font-medium">{error}</p>
           <Button variant="outline" className="mt-4" onClick={() => router.push('/exams')}>
             返回考试列表
@@ -141,9 +141,9 @@ export default function ExamIntroPage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            <div className="mt-6 border border-amber-200 bg-amber-50/60 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-amber-800 mb-2">考试须知</h3>
-              <ul className="text-xs text-amber-800/80 space-y-1.5 leading-relaxed list-disc pl-4">
+            <div className="mt-6 border border-amber-500/30 bg-amber-500/20 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-amber-300 mb-2">考试须知</h3>
+              <ul className="text-xs text-amber-300/80 space-y-1.5 leading-relaxed list-disc pl-4">
                 <li>答题过程自动保存，可刷新页面后继续作答</li>
                 <li>剩余时间以服务器时间为准，到达时限自动交卷</li>
                 <li>交卷前系统会提示未作答题目数量，提交后不可修改</li>
@@ -161,7 +161,7 @@ export default function ExamIntroPage({ params }: { params: Promise<{ id: string
               <span className="text-sm">我已阅读并理解考试须知</span>
             </label>
 
-            {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-4">{error}</p>}
+            {error && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2 mt-4">{error}</p>}
 
             <div className="flex gap-3 mt-6">
               <Button variant="outline" onClick={() => router.push('/exams')} className="flex-1">

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { requireAdmin } from '@/lib/auth';
 import { fail, ok, withErrorHandling } from '@/lib/api';
-import { QUESTION_TYPE_LABELS, type Question, type QuestionConfigItem } from '@/lib/types';
+import { normalizePaperMode, QUESTION_TYPE_LABELS, type Question, type QuestionConfigItem } from '@/lib/types';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -22,17 +22,23 @@ export const GET = withErrorHandling(async (_req: Request, ctx: Ctx): Promise<Ne
   if (qErr) throw new Error(`查询试题失败: ${qErr.message}`);
 
   const questionConfig = (exam.question_config as QuestionConfigItem[] | null) ?? [];
+  const paperMode = normalizePaperMode(exam.paper_mode as string);
   const qs = (questions ?? []) as Question[];
   const issues: string[] = [];
   const warnings: string[] = [];
 
-  // 1. 题量校验
+  // 1. 题量校验：固定试卷须与配置一致；随机试卷题库题量须不少于抽题配置
   const countByType: Record<string, { actual: number; expected: number; ok: boolean }> = {};
   for (const spec of questionConfig) {
     const actual = qs.filter((q) => q.type === spec.type).length;
-    countByType[spec.type] = { actual, expected: spec.count, ok: actual === spec.count };
-    if (actual !== spec.count) {
-      issues.push(`题型「${QUESTION_TYPE_LABELS[spec.type]}」配置 ${spec.count} 题，实际 ${actual} 题`);
+    const ok = paperMode === 'random' ? actual >= spec.count : actual === spec.count;
+    countByType[spec.type] = { actual, expected: spec.count, ok };
+    if (!ok) {
+      issues.push(
+        paperMode === 'random'
+          ? `题库中「${QUESTION_TYPE_LABELS[spec.type]}」不足：抽题需要 ${spec.count} 题，现有 ${actual} 题`
+          : `题型「${QUESTION_TYPE_LABELS[spec.type]}」配置 ${spec.count} 题，实际 ${actual} 题`,
+      );
     }
   }
   // 配置外多余的题目
@@ -43,10 +49,10 @@ export const GET = withErrorHandling(async (_req: Request, ctx: Ctx): Promise<Ne
     }
   }
 
-  // 2. 总分校验
+  // 2. 总分校验（随机试卷按配置卷面总分；固定试卷为题库合计）
   const actualTotal = qs.reduce((s, q) => s + Number(q.score), 0);
   const expectedTotal = questionConfig.reduce((s, t) => s + t.count * t.score, 0);
-  if (actualTotal !== expectedTotal) {
+  if (paperMode !== 'random' && actualTotal !== expectedTotal) {
     issues.push(`目标总分 ${expectedTotal} 分，实际总分 ${actualTotal} 分`);
   }
 

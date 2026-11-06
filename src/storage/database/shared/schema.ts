@@ -115,7 +115,8 @@ export const exams = pgTable(
     total_score: numeric("total_score", { precision: 8, scale: 1 }).notNull().default("100"),
     pass_score: numeric("pass_score", { precision: 8, scale: 1 }).notNull().default("60"),
     max_attempts: integer("max_attempts").notNull().default(1),
-    paper_mode: varchar("paper_mode", { length: 16 }).notNull().default("uniform"), // uniform/shuffle/random_equal
+    paper_mode: varchar("paper_mode", { length: 16 }).notNull().default("fixed"), // fixed=固定试卷(需管理员确认)/random=随机试卷(题库抽题)
+    confirmed_at: timestamp("confirmed_at", { withTimezone: true }), // 固定试卷的管理员确认时间
     question_order: varchar("question_order", { length: 16 }).notNull().default("fixed"), // fixed/random
     option_shuffle: boolean("option_shuffle").notNull().default(false),
     result_visibility: varchar("result_visibility", { length: 16 }).notNull().default("manual"), // immediate/after_end/manual

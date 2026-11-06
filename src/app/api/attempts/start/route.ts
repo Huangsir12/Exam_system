@@ -4,7 +4,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { requireCandidate } from '@/lib/auth';
 import { fail, ok, withErrorHandling } from '@/lib/api';
 import { buildPaperSnapshot, buildQuestionSnapshots, type SnapshotQuestion } from '@/lib/grading';
-import { EXAM_STATUS, type PaperSnapshotItem, type Question, type QuestionConfigItem } from '@/lib/types';
+import { EXAM_STATUS, normalizePaperMode, type PaperSnapshotItem, type Question, type QuestionConfigItem } from '@/lib/types';
 
 /** 返回给考生的安全题目视图（剥离答案与解析） */
 function toPublicQuestion(snap: SnapshotQuestion, sort: number) {
@@ -115,11 +115,21 @@ export const POST = withErrorHandling(async (request: Request): Promise<NextResp
   if (!questions || questions.length === 0) return fail('试卷暂无题目', 400);
 
   const questionConfig = (exam.question_config as QuestionConfigItem[] | null) ?? [];
+  const paperMode = normalizePaperMode(exam.paper_mode as string);
+
+  // 随机试卷：校验题库题量是否满足抽题要求
+  if (paperMode === 'random') {
+    for (const cfg of questionConfig) {
+      const poolCount = (questions as Question[]).filter((q) => q.type === cfg.type).length;
+      if (poolCount < cfg.count) {
+        return fail('题库题量不足，无法生成试卷，请联系管理员', 409);
+      }
+    }
+  }
+
   const seed = Date.now() % 2147483647;
   const snapshot = buildPaperSnapshot(questions as Question[], {
-    paperMode: exam.paper_mode as 'uniform' | 'shuffle' | 'random_equal',
-    questionOrder: exam.question_order as 'fixed' | 'random',
-    optionShuffle: Boolean(exam.option_shuffle),
+    paperMode,
     questionConfig: questionConfig.map((c) => ({ type: c.type, count: c.count })),
     seed,
   });

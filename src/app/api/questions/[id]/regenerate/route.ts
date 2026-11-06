@@ -59,6 +59,9 @@ export const POST = withErrorHandling(async (_req: Request, ctx: Ctx): Promise<N
     .eq('id', id);
   if (error) throw new Error(`保存失败: ${error.message}`);
 
+  // 题目变更后固定试卷需重新确认
+  await client.from('exams').update({ confirmed_at: null, updated_at: new Date().toISOString() }).eq('id', q.exam_id);
+
   await writeLog({
     operatorType: 'admin',
     operatorId: admin.user_id,

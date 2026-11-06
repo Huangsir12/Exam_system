@@ -41,9 +41,7 @@ export default function NewExamPage() {
   const [duration, setDuration] = useState(60);
   const [passScore, setPassScore] = useState(60);
   const [maxAttempts, setMaxAttempts] = useState(1);
-  const [paperMode, setPaperMode] = useState<'uniform' | 'shuffle' | 'random_equal'>('uniform');
-  const [questionOrder, setQuestionOrder] = useState<'fixed' | 'random'>('fixed');
-  const [optionShuffle, setOptionShuffle] = useState(false);
+  const [paperMode, setPaperMode] = useState<'fixed' | 'random'>('fixed');
   const [resultVisibility, setResultVisibility] = useState<'immediate' | 'after_end' | 'manual'>('immediate');
   const [showAnswer, setShowAnswer] = useState(true);
   const [showAnalysis, setShowAnalysis] = useState(true);
@@ -137,8 +135,6 @@ export default function NewExamPage() {
           pass_score: passScore,
           max_attempts: maxAttempts,
           paper_mode: paperMode,
-          question_order: questionOrder,
-          option_shuffle: optionShuffle,
           result_visibility: resultVisibility,
           show_answer: showAnswer,
           show_analysis: showAnalysis,
@@ -286,11 +282,10 @@ export default function NewExamPage() {
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">组卷方式</CardTitle></CardHeader>
         <CardContent>
-          <RadioGroup value={paperMode} onValueChange={(v) => setPaperMode(v as typeof paperMode)} className="grid sm:grid-cols-3 gap-3">
+          <RadioGroup value={paperMode} onValueChange={(v) => setPaperMode(v as typeof paperMode)} className="grid sm:grid-cols-2 gap-3">
             {[
-              { value: 'uniform', label: '统一试卷', desc: '所有考生题目、顺序完全一致' },
-              { value: 'shuffle', label: '同卷乱序', desc: '题目相同，题目和选项顺序打乱' },
-              { value: 'random_equal', label: '随机等值试卷', desc: '题型分值结构相同的平行试卷' },
+              { value: 'fixed', label: '固定试卷', desc: '所有考生使用同一套试卷。生成题目后需管理员确认，确认后方可发布' },
+              { value: 'random', label: '随机试卷', desc: '系统按试卷要求生成题库，考生点击开始考试时随机抽题组卷，每人试卷不同' },
             ].map((item) => (
               <label key={item.value} className={`border rounded-lg p-3.5 cursor-pointer transition-colors ${paperMode === item.value ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'}`}>
                 <div className="flex items-center gap-2">
@@ -301,16 +296,11 @@ export default function NewExamPage() {
               </label>
             ))}
           </RadioGroup>
-          <div className="flex gap-6 mt-4 flex-wrap">
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={questionOrder === 'random'} onCheckedChange={(v) => setQuestionOrder(v === true ? 'random' : 'fixed')} />
-              题目顺序随机
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={optionShuffle} onCheckedChange={(v) => setOptionShuffle(v === true)} />
-              选项顺序随机（单选/多选）
-            </label>
-          </div>
+          {paperMode === 'random' && (
+            <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2 mt-3">
+              随机试卷将按题型配置题量的 2 倍生成题库；考生开考时从中随机抽题，题目与选项顺序自动打乱。
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -350,7 +340,7 @@ export default function NewExamPage() {
         </CardContent>
       </Card>
 
-      {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
 
       <div className="flex justify-end gap-3 pb-8">
         <Button variant="outline" onClick={() => router.back()}>取消</Button>

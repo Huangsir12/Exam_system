@@ -119,8 +119,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="bg-card border border-border rounded-xl p-8 max-w-md w-full text-center shadow-sm">
-          <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
-            <Clock3 className="w-7 h-7 text-amber-600" />
+          <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+            <Clock3 className="w-7 h-7 text-amber-300" />
           </div>
           <h2 className="font-serif font-bold text-lg">{data.exam_title}</h2>
           <p className="text-sm text-muted-foreground mt-2">{data.message}</p>
@@ -148,13 +148,13 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-6 flex-wrap">
             <div className="text-center">
-              <div className={cn('font-serif text-5xl font-bold', passed ? 'text-primary' : 'text-red-700')}>{score}</div>
+              <div className={cn('font-serif text-5xl font-bold', passed ? 'text-primary' : 'text-red-300')}>{score}</div>
               <p className="text-xs text-muted-foreground mt-1">总分 {data.type_stats ? undefined : ''}满分 {items.reduce((s, i) => s + Number(i.score), 0)}</p>
             </div>
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-muted/50 rounded-lg p-3 text-center">
                 <p className="text-xs text-muted-foreground">是否及格</p>
-                <p className={cn('font-bold mt-1 flex items-center justify-center gap-1', passed ? 'text-emerald-700' : 'text-red-700')}>
+                <p className={cn('font-bold mt-1 flex items-center justify-center gap-1', passed ? 'text-emerald-300' : 'text-red-300')}>
                   {passed ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                   {passed ? '及格' : '不及格'}
                 </p>
@@ -200,9 +200,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                 >
                   <span className={cn(
                     'w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold',
-                    item.is_correct === true ? 'bg-emerald-100 text-emerald-700'
-                      : unanswered ? 'bg-stone-100 text-stone-500'
-                      : 'bg-red-100 text-red-700',
+                    item.is_correct === true ? 'bg-emerald-100 text-emerald-300'
+                      : unanswered ? 'bg-secondary text-muted-foreground'
+                      : 'bg-red-100 text-red-300',
                   )}>
                     {item.is_correct === true ? '✓' : unanswered ? '–' : '✗'}
                   </span>
@@ -210,7 +210,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                       <span>{item.sort + 1}. {TYPE_LABELS[item.type]}</span>
                       <span>{item.score} 分</span>
-                      <span className={cn('font-medium', item.is_correct === true ? 'text-emerald-700' : 'text-red-700')}>
+                      <span className={cn('font-medium', item.is_correct === true ? 'text-emerald-300' : 'text-red-300')}>
                         得分 {item.my_score ?? 0}
                       </span>
                     </div>
@@ -232,8 +232,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                               key={opt.key}
                               className={cn(
                                 'text-sm px-3 py-2 rounded-md border flex gap-2',
-                                isStd && data.show_answer ? 'border-emerald-300 bg-emerald-50/60'
-                                  : isMy ? 'border-red-300 bg-red-50/60'
+                                isStd && data.show_answer ? 'border-emerald-500/30 bg-emerald-500/20'
+                                  : isMy ? 'border-red-500/30 bg-red-500/20'
                                   : 'border-border/60',
                               )}
                             >
@@ -249,12 +249,12 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     <div className="grid gap-2 text-sm">
                       <div className="flex gap-2">
                         <span className="text-muted-foreground shrink-0 w-20">我的答案</span>
-                        <span className={cn('whitespace-pre-wrap', wrong && 'text-red-700')}>{myAnsText}</span>
+                        <span className={cn('whitespace-pre-wrap', wrong && 'text-red-300')}>{myAnsText}</span>
                       </div>
                       {data.show_answer && (
                         <div className="flex gap-2">
                           <span className="text-muted-foreground shrink-0 w-20">标准答案</span>
-                          <span className="text-emerald-700 whitespace-pre-wrap">{fmtStdAnswer(item)}</span>
+                          <span className="text-emerald-300 whitespace-pre-wrap">{fmtStdAnswer(item)}</span>
                         </div>
                       )}
                       {item.type === 'essay' && item.grader_comment && (

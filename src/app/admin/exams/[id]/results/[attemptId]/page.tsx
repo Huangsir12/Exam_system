@@ -108,7 +108,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ id: st
           <p className="text-xs text-muted-foreground mt-0.5">
             {exam?.title} · {attempt.phone_masked} · 总分 {attempt.total_score ?? '—'} 分（客观 {attempt.objective_score ?? 0} / 主观 {attempt.subjective_score ?? 0}）
             {attempt.is_passed !== null && attempt.is_passed !== undefined && (
-              <span className={cn('ml-2 font-medium', attempt.is_passed ? 'text-emerald-700' : 'text-red-700')}>
+              <span className={cn('ml-2 font-medium', attempt.is_passed ? 'text-emerald-300' : 'text-red-300')}>
                 {attempt.is_passed ? '及格' : '不及格'}
               </span>
             )}
@@ -125,7 +125,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                   <span>{TYPE_LABELS[item.type]}</span>
                   <span>{item.score} 分</span>
-                  <span className={cn('font-medium', item.is_correct === true ? 'text-emerald-700' : 'text-red-700')}>得分 {item.my_score ?? 0}</span>
+                  <span className={cn('font-medium', item.is_correct === true ? 'text-emerald-300' : 'text-red-300')}>得分 {item.my_score ?? 0}</span>
                   {item.graded_by && <span>阅卷人：{item.graded_by}</span>}
                 </div>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.content}</p>
@@ -136,7 +136,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ id: st
                       const stdArr = Array.isArray(item.standard_answer) ? item.standard_answer as string[] : [String(item.standard_answer ?? '')];
                       const isStd = stdArr.includes(opt.key);
                       return (
-                        <div key={opt.key} className={cn('text-xs px-2.5 py-1.5 rounded-md border', isStd ? 'border-emerald-300 bg-emerald-50/60' : isMy ? 'border-red-300 bg-red-50/60' : 'border-border/60 text-muted-foreground')}>
+                        <div key={opt.key} className={cn('text-xs px-2.5 py-1.5 rounded-md border', isStd ? 'border-emerald-500/30 bg-emerald-500/20' : isMy ? 'border-red-500/30 bg-red-500/20' : 'border-border/60 text-muted-foreground')}>
                           {opt.key}. {opt.text}{isMy && '（考生选择）'}
                         </div>
                       );
@@ -145,7 +145,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ id: st
                 )}
                 <div className="grid gap-1.5 text-sm">
                   <p><span className="text-muted-foreground">考生答案：</span>{fmtAnswer(item)}</p>
-                  <p><span className="text-muted-foreground">标准答案：</span><span className="text-emerald-700">{fmtStd(item)}</span></p>
+                  <p><span className="text-muted-foreground">标准答案：</span><span className="text-emerald-300">{fmtStd(item)}</span></p>
                   {item.grader_comment && <p><span className="text-muted-foreground">阅卷评语：</span>{item.grader_comment}</p>}
                 </div>
                 {item.analysis && (

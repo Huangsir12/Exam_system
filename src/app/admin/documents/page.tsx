@@ -149,7 +149,7 @@ export default function DocumentsPage() {
         <input ref={fileRef} type="file" accept={ACCEPT} multiple className="hidden" onChange={handleUpload} />
       </div>
 
-      {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
@@ -168,7 +168,7 @@ export default function DocumentsPage() {
               <CardContent className="p-4 flex items-center gap-4 flex-wrap">
                 <div className={cn(
                   'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
-                  doc.parse_status === 'success' ? 'bg-emerald-50 text-emerald-700' : doc.parse_status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-muted text-muted-foreground',
+                  doc.parse_status === 'success' ? 'bg-emerald-500/10 text-emerald-300' : doc.parse_status === 'failed' ? 'bg-red-500/10 text-red-300' : 'bg-muted text-muted-foreground',
                 )}>
                   <FileText className="w-5 h-5" />
                 </div>
@@ -191,7 +191,7 @@ export default function DocumentsPage() {
                     {doc.file_type.toUpperCase()} · {fmtSize(doc.file_size)} · 被引用 {doc.used_count} 次 · {new Date(doc.created_at).toLocaleString('zh-CN')}
                   </p>
                   {doc.parse_status === 'failed' && doc.parse_error && (
-                    <p className="text-xs text-red-600 mt-1">解析失败：{doc.parse_error}</p>
+                    <p className="text-xs text-red-300 mt-1">解析失败：{doc.parse_error}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -212,7 +212,7 @@ export default function DocumentsPage() {
                   <Button variant="ghost" size="sm" onClick={() => { setRenamingId(doc.id); setRenameValue(doc.name); }} title="重命名">
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(doc)} title="删除">
+                  <Button variant="ghost" size="sm" className="text-red-300 hover:text-red-300 hover:bg-red-500/10" onClick={() => handleDelete(doc)} title="删除">
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>

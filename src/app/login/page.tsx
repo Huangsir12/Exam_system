@@ -77,17 +77,21 @@ export default function CandidateLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10 page-enter">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary text-primary-foreground mb-4">
-            <GraduationCap className="w-7 h-7" />
+        <div className="text-center mb-10">
+          <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-primary/40 bg-primary/10 mb-5 shadow-[0_0_36px_-6px_oklch(0.8_0.13_195/45%)]">
+            <GraduationCap className="w-8 h-8 text-primary" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-primary pulse-dot" />
           </div>
-          <h1 className="font-serif text-2xl font-bold text-foreground">智能考试系统</h1>
-          <p className="text-sm text-muted-foreground mt-2">考生登录 · 手机验证码验证身份</p>
+          <h1 className="font-display text-3xl font-bold tracking-wide">
+            <span className="text-gradient">智能考试系统</span>
+          </h1>
+          <div className="divider-glow w-40 mx-auto mt-3" />
+          <p className="text-sm text-muted-foreground mt-3">考生登录 · 手机验证码验证身份</p>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-sm space-y-5">
+        <form onSubmit={handleLogin} className="card-tech rounded-xl p-6 sm:p-8 space-y-5">
           <div className="space-y-2">
             <Label htmlFor="name">姓名</Label>
             <Input
@@ -132,16 +136,16 @@ export default function CandidateLoginPage() {
               </Button>
             </div>
             {devCode && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 flex items-center gap-1.5">
+              <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2 flex items-center gap-1.5">
                 <MessageSquareText className="w-3.5 h-3.5 shrink-0" />
                 演示模式未接入短信通道，本次验证码：<span className="font-mono font-bold tracking-wider">{devCode}</span>
               </p>
             )}
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>}
+          {error && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full btn-glow font-semibold" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
             登录并查看我的考试
           </Button>

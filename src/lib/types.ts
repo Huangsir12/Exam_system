@@ -4,7 +4,8 @@ export type QuestionType = 'single' | 'multiple' | 'judge' | 'fill' | 'essay';
 
 export type ExamStatus = 'draft' | 'pending' | 'published' | 'ongoing' | 'ended' | 'archived';
 
-export type PaperMode = 'uniform' | 'shuffle' | 'random_equal';
+/** 组卷模式：fixed=固定试卷（全员同卷，需管理员确认后发布）；random=随机试卷（题库抽题，考生开始时生成） */
+export type PaperMode = 'fixed' | 'random';
 
 export type ResultVisibility = 'immediate' | 'after_end' | 'manual';
 
@@ -93,6 +94,7 @@ export interface Exam {
   paper_mode: PaperMode;
   question_order: 'fixed' | 'random';
   option_shuffle: boolean;
+  confirmed_at: string | null; // 固定试卷的管理员确认时间
   result_visibility: ResultVisibility;
   show_answer: boolean;
   show_analysis: boolean;
@@ -267,10 +269,14 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 };
 
 export const PAPER_MODE_LABELS: Record<PaperMode, string> = {
-  uniform: '统一试卷',
-  shuffle: '同卷乱序',
-  random_equal: '随机等值试卷',
+  fixed: '固定试卷',
+  random: '随机试卷',
 };
+
+/** 兼容历史数据：uniform/shuffle 归入 fixed，random_equal 归入 random */
+export function normalizePaperMode(mode: string | null | undefined): PaperMode {
+  return mode === 'random' || mode === 'random_equal' ? 'random' : 'fixed';
+}
 
 export const RESULT_VISIBILITY_LABELS: Record<ResultVisibility, string> = {
   immediate: '提交后立即公开',

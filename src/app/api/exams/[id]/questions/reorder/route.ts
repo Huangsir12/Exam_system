@@ -22,6 +22,9 @@ export const POST = withErrorHandling(async (request: Request, ctx: Ctx): Promis
     if (error) throw new Error(`排序失败: ${error.message}`);
   }
 
+  // 题序调整后固定试卷需重新确认
+  await client.from('exams').update({ confirmed_at: null, updated_at: new Date().toISOString() }).eq('id', id);
+
   await writeLog({
     operatorType: 'admin',
     operatorId: admin.user_id,

@@ -26,12 +26,12 @@ interface MyExam {
 }
 
 const MY_STATUS: Record<string, { label: string; color: string }> = {
-  not_started: { label: '未开始', color: 'bg-stone-100 text-stone-600 border-stone-200' },
-  available: { label: '可考试', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  not_started: { label: '未开始', color: 'bg-secondary text-secondary-foreground border-border' },
+  available: { label: '可考试', color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
   in_progress: { label: '进行中', color: 'bg-sky-50 text-sky-700 border-sky-200' },
-  submitted: { label: '已提交', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  grading: { label: '阅卷中', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-  expired: { label: '已过期', color: 'bg-stone-100 text-stone-500 border-stone-200' },
+  submitted: { label: '已提交', color: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
+  grading: { label: '阅卷中', color: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
+  expired: { label: '已过期', color: 'bg-secondary text-muted-foreground border-border' },
 };
 
 function fmtTime(s: string | null): string {
@@ -51,11 +51,11 @@ export default function MyExamsPage() {
       fetch('/api/auth/me').then((r) => r.json()),
       fetch('/api/my/exams').then((r) => r.json()),
     ]).then(([me, exams]) => {
-      if (me.code !== 0) {
+      if (me.code !== 0 || !me.data?.candidate) {
         router.replace('/login');
         return;
       }
-      setUserName(me.data?.user_name ?? '');
+      setUserName(me.data.candidate.user_name ?? '');
       if (exams.code === 0) setList(exams.data ?? []);
       setLoading(false);
     });
@@ -86,7 +86,7 @@ export default function MyExamsPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4 page-enter">
         {loading ? (
           <div className="text-center py-20 text-muted-foreground">加载中…</div>
         ) : list.length === 0 ? (
@@ -102,7 +102,7 @@ export default function MyExamsPage() {
             const st = MY_STATUS[exam.my_status] ?? MY_STATUS.not_started;
             const latest = exam.latest_attempt;
             return (
-              <div key={exam.id} className="bg-card border border-border rounded-xl p-5 shadow-sm">
+              <div key={exam.id} className="card-tech rounded-xl p-5">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="font-serif font-bold text-lg leading-snug">{exam.title}</h2>
                   <Badge variant="outline" className={st.color}>{st.label}</Badge>

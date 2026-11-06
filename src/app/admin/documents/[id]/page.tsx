@@ -75,7 +75,7 @@ export default function DocumentDetailPage({ params }: { params: Promise<{ id: s
       </div>
 
       {doc.parse_status === 'failed' && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-300">
           解析失败：{doc.parse_error ?? '未知错误'}，请尝试重新解析或更换文档。
         </div>
       )}

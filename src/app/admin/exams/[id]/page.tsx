@@ -4,7 +4,7 @@ import { useExam } from './layout';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PAPER_MODE_LABELS, QUESTION_TYPE_LABELS, RESULT_VISIBILITY_LABELS, fmtDateTime } from '@/lib/types';
+import { PAPER_MODE_LABELS, QUESTION_TYPE_LABELS, RESULT_VISIBILITY_LABELS, fmtDateTime, normalizePaperMode } from '@/lib/types';
 import { useState } from 'react';
 
 export default function ExamSettingsPage() {
@@ -87,9 +87,15 @@ export default function ExamSettingsPage() {
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">组卷配置</CardTitle></CardHeader>
         <CardContent className="text-sm space-y-2.5">
-          <Row label="组卷方式" value={PAPER_MODE_LABELS[exam.paper_mode] ?? exam.paper_mode} />
-          <Row label="题目顺序" value={exam.question_order === 'random' ? '随机' : '固定'} />
-          <Row label="选项乱序" value={exam.option_shuffle ? '开启' : '关闭'} />
+          <Row label="组卷方式" value={PAPER_MODE_LABELS[normalizePaperMode(exam.paper_mode)]} />
+          {normalizePaperMode(exam.paper_mode) === 'fixed' ? (
+            <Row
+              label="确认状态"
+              value={exam.confirmed_at ? `已确认（${fmtDateTime(exam.confirmed_at)}）` : '未确认，请在试卷页核对后确认'}
+            />
+          ) : (
+            <Row label="抽题方式" value="按配置随机抽题，题序与选项自动乱序" />
+          )}
           <div className="pt-1.5">
             <p className="text-muted-foreground mb-1.5">题型结构</p>
             <div className="flex flex-wrap gap-2">
@@ -118,7 +124,7 @@ export default function ExamSettingsPage() {
         <CardHeader className="pb-3"><CardTitle className="text-base">操作</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {message && (
-            <p className={`text-sm px-3 py-2 rounded-md ${message.includes('失败') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+            <p className={`text-sm px-3 py-2 rounded-md ${message.includes('失败') ? 'bg-red-500/10 text-red-300 border border-red-500/30' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'}`}>
               {message}
             </p>
           )}
@@ -137,7 +143,7 @@ export default function ExamSettingsPage() {
             )}
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            发布前系统会自动校验：题量与分值一致性、答案完整性、解析与知识来源、名单配置。考试开始后试卷内容不可修改。
+            发布前系统会自动校验：题量与分值一致性、答案完整性、解析与知识来源、名单配置。固定试卷需先在试卷页完成确认。考试开始后试卷内容不可修改。
           </p>
         </CardContent>
       </Card>

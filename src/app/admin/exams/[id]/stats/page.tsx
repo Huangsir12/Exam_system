@@ -91,8 +91,8 @@ export default function StatsPage() {
           <CardContent className="space-y-3">
             <BarRow label="应考人数" value={o.total_candidates} max={o.total_candidates} color="bg-primary" />
             <BarRow label="已开考" value={o.started} max={o.total_candidates} color="bg-sky-700" />
-            <BarRow label="已交卷" value={o.submitted} max={o.total_candidates} color="bg-emerald-600" />
-            <BarRow label="未考人数" value={o.not_started} max={o.total_candidates} color="bg-stone-300" />
+            <BarRow label="已交卷" value={o.submitted} max={o.total_candidates} color="bg-emerald-500" />
+            <BarRow label="未考人数" value={o.not_started} max={o.total_candidates} color="bg-muted-foreground/40" />
             <BarRow label="阅卷中" value={o.grading} max={o.total_candidates} color="bg-amber-500" />
             <div className="pt-2 border-t border-border flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
               <span>参考率 {pct(o.reference_rate)}</span>
@@ -160,7 +160,7 @@ export default function StatsPage() {
                   <span className="text-muted-foreground shrink-0">{pct(k.score_rate)}</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-600 rounded-full" style={{ width: `${Math.min(100, k.score_rate)}%` }} />
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, k.score_rate)}%` }} />
                 </div>
               </div>
             ))}
@@ -185,7 +185,7 @@ export default function StatsPage() {
                   <p className="text-sm truncate mb-1">{q.content}</p>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={cn('h-full rounded-full', rate === null ? 'bg-stone-300' : rate >= 60 ? 'bg-emerald-600' : rate >= 40 ? 'bg-amber-500' : 'bg-red-500')}
+                      className={cn('h-full rounded-full', rate === null ? 'bg-muted-foreground/40' : rate >= 60 ? 'bg-emerald-500' : rate >= 40 ? 'bg-amber-500' : 'bg-red-500')}
                       style={{ width: `${Math.min(100, rate ?? 0)}%` }}
                     />
                   </div>

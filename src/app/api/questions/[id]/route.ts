@@ -11,7 +11,8 @@ async function recalcTotal(examId: string): Promise<void> {
   const client = getSupabaseClient();
   const { data: qs } = await client.from('questions').select('score').eq('exam_id', examId);
   const totalScore = (qs ?? []).reduce((s: number, q) => s + Number(q.score), 0);
-  await client.from('exams').update({ total_score: totalScore, updated_at: new Date().toISOString() }).eq('id', examId);
+  // 题目内容变更后固定试卷需重新确认
+  await client.from('exams').update({ total_score: totalScore, confirmed_at: null, updated_at: new Date().toISOString() }).eq('id', examId);
 }
 
 export const PATCH = withErrorHandling(async (request: Request, ctx: Ctx): Promise<NextResponse> => {

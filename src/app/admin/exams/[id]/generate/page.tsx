@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QUESTION_TYPE_LABELS, type QuestionType } from '@/lib/types';
+import { normalizePaperMode, QUESTION_TYPE_LABELS, type QuestionType } from '@/lib/types';
 import { CheckCircle2, Loader2, Sparkles, XCircle } from 'lucide-react';
 
 interface ProgressItem {
@@ -45,7 +45,9 @@ export default function GeneratePage() {
     setResult(null);
     setLogs([]);
     const config = exam.question_config ?? [];
-    setItems(config.map((c) => ({ type: c.type, status: 'pending', generated: 0, total: c.count })));
+    const isRandom = normalizePaperMode(exam.paper_mode) === 'random';
+    // 与后端一致：随机试卷按配置 2 倍生成题库
+    setItems(config.map((c) => ({ type: c.type, status: 'pending', generated: 0, total: isRandom ? Math.max(c.count * 2, c.count + 2) : c.count })));
     pushLog('开始智能出题任务…');
 
     try {
@@ -133,15 +135,20 @@ export default function GeneratePage() {
           {items.length === 0 && !running && (
             <p className="text-sm text-muted-foreground">点击下方按钮开始智能出题</p>
           )}
+          {normalizePaperMode(exam.paper_mode) === 'random' && (
+            <p className="text-xs rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 px-3 py-2">
+              随机试卷模式：系统将按配置题量的 2 倍生成题库，考生开始考试时随机抽题组卷
+            </p>
+          )}
           {items.map((item) => (
             <div key={item.type} className="border border-border rounded-lg p-3.5">
               <div className="flex items-center gap-2.5">
                 {item.status === 'done' ? (
-                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600" />
+                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-300" />
                 ) : item.status === 'generating' ? (
                   <Loader2 className="w-4.5 h-4.5 text-primary animate-spin" />
                 ) : item.status === 'error' ? (
-                  <XCircle className="w-4.5 h-4.5 text-red-600" />
+                  <XCircle className="w-4.5 h-4.5 text-red-300" />
                 ) : (
                   <div className="w-4.5 h-4.5 rounded-full border-2 border-muted" />
                 )}
@@ -161,7 +168,7 @@ export default function GeneratePage() {
           ))}
 
           {allDone && (
-            <div className={`rounded-lg p-3.5 text-sm ${result.errors.length > 0 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
+            <div className={`rounded-lg p-3.5 text-sm ${result.errors.length > 0 ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'}`}>
               <p className="font-medium">共生成 {result.generated} 道题</p>
               {result.errors.map((err, i) => (
                 <p key={i} className="text-xs mt-1">{err}</p>
@@ -188,7 +195,7 @@ export default function GeneratePage() {
             )}
           </div>
           {exam.generation_status === 'failed' && !running && !allDone && (
-            <p className="text-xs text-red-600">上次出题失败（{exam.generation_error ?? '未知原因'}），可重新发起。</p>
+            <p className="text-xs text-red-300">上次出题失败（{exam.generation_error ?? '未知原因'}），可重新发起。</p>
           )}
         </CardContent>
       </Card>

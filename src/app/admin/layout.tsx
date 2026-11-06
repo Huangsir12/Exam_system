@@ -25,11 +25,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((json) => {
-        if (json.code !== 0 || json.data?.user_type !== 'admin') {
+        if (json.code !== 0 || !json.data?.admin) {
           router.replace('/admin/login');
           return;
         }
-        setName(json.data.user_name ?? '');
+        setName(json.data.admin.user_name ?? '');
       })
       .catch(() => router.replace('/admin/login'));
   }, [pathname, isLoginPage, router]);
@@ -46,10 +46,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* 侧边栏 */}
       <aside className="w-56 shrink-0 bg-sidebar text-sidebar-foreground flex-col hidden md:flex fixed inset-y-0 z-20">
         <div className="h-16 flex items-center gap-2.5 px-5 border-b border-sidebar-border">
-          <div className="w-8 h-8 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-serif font-bold text-sm">考</div>
+          <div className="relative w-8 h-8 rounded-lg border border-sidebar-primary/50 bg-sidebar-primary/15 text-sidebar-primary flex items-center justify-center font-display font-bold text-sm shadow-[0_0_16px_-2px_oklch(0.8_0.13_195/50%)]">考</div>
           <div>
-            <p className="font-serif font-bold text-sm leading-tight">智能考试系统</p>
-            <p className="text-[10px] text-sidebar-foreground/60">管理后台</p>
+            <p className="font-display font-bold text-sm leading-tight tracking-wide">智能考试系统</p>
+            <p className="text-[10px] text-sidebar-foreground/50 tracking-widest">EXAM CONSOLE</p>
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -60,12 +60,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors',
+                  'relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all duration-200',
                   active
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                    ? 'bg-sidebar-accent text-sidebar-primary font-medium shadow-[inset_0_0_0_1px_oklch(0.8_0.13_195/30%),0_0_18px_-6px_oklch(0.8_0.13_195/40%)]'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground',
                 )}
               >
+                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-sidebar-primary shadow-[0_0_8px_oklch(0.8_0.13_195/80%)]" />}
                 <item.icon className="w-4 h-4" />
                 {item.label}
               </Link>
@@ -87,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* 移动端顶栏 */}
       <div className="md:hidden fixed top-0 inset-x-0 z-20 bg-sidebar text-sidebar-foreground">
         <div className="h-14 flex items-center justify-between px-4">
-          <span className="font-serif font-bold text-sm">智能考试系统</span>
+          <span className="font-display font-bold text-sm tracking-wide">智能考试系统</span>
           <button onClick={logout} className="text-xs text-sidebar-foreground/70">退出</button>
         </div>
         <nav className="flex px-2 pb-2 gap-1 overflow-x-auto">

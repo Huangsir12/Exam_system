@@ -35,22 +35,23 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       <div>
-        <h1 className="font-serif text-2xl font-bold">数据总览</h1>
-        <p className="text-sm text-muted-foreground mt-1">系统整体运行情况一览</p>
+        <h1 className="font-display text-2xl font-bold tracking-wide">数据总览</h1>
+        <div className="divider-glow w-24 mt-2" />
+        <p className="text-sm text-muted-foreground mt-2">系统整体运行情况一览</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
           <Link key={c.label} href={c.href}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+            <Card className="card-tech cursor-pointer h-full">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{c.label}</span>
-                  <c.icon className="w-4 h-4 text-muted-foreground" />
+                  <c.icon className="w-4 h-4 text-primary/80" />
                 </div>
-                <p className="font-serif text-3xl font-bold mt-2">{c.value}</p>
+                <p className="font-display text-3xl font-bold mt-2 text-gradient">{c.value}</p>
               </CardContent>
             </Card>
           </Link>

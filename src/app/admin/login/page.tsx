@@ -42,33 +42,41 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-sidebar px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 page-enter">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground mb-4">
-            <ShieldCheck className="w-7 h-7" />
+        <div className="text-center mb-10">
+          <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-primary/40 bg-primary/10 mb-5 shadow-[0_0_36px_-6px_oklch(0.8_0.13_195/45%)]">
+            <ShieldCheck className="w-8 h-8 text-primary" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-primary pulse-dot" />
           </div>
-          <h1 className="font-serif text-2xl font-bold text-sidebar-foreground">管理后台</h1>
-          <p className="text-sm text-sidebar-foreground/60 mt-2">智能考试系统 · 管理员登录</p>
+          <h1 className="font-display text-3xl font-bold tracking-wide">
+            <span className="text-gradient">EXAM CONTROL</span>
+          </h1>
+          <div className="divider-glow w-40 mx-auto mt-3" />
+          <p className="text-sm text-muted-foreground mt-3">智能考试系统 · 管理驾驶舱</p>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-xl space-y-5">
+        <form onSubmit={handleLogin} className="card-tech rounded-xl p-6 sm:p-8 space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="username">账号</Label>
-            <Input id="username" placeholder="管理员账号" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
+            <Label htmlFor="username" className="text-foreground/80">账号</Label>
+            <div className="input-tech rounded-md transition-shadow">
+              <Input id="username" placeholder="管理员账号" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" className="bg-secondary/60 border-input" />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">密码</Label>
-            <Input id="password" type="password" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+            <Label htmlFor="password" className="text-foreground/80">密码</Label>
+            <div className="input-tech rounded-md transition-shadow">
+              <Input id="password" type="password" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" className="bg-secondary/60 border-input" />
+            </div>
           </div>
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          {error && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
+          <Button type="submit" className="w-full btn-glow font-semibold" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
-            登录
+            进入驾驶舱
           </Button>
         </form>
-        <p className="text-center mt-6">
-          <a href="/login" className="text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">← 返回考生登录</a>
+        <p className="text-center mt-8">
+          <a href="/login" className="text-xs text-muted-foreground hover:text-primary transition-colors">← 返回考生入口</a>
         </p>
       </div>
     </div>

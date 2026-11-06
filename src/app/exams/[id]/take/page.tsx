@@ -202,7 +202,7 @@ export default function TakeExamPage({ params }: { params: Promise<{ id: string 
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center">
-          <AlertTriangle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+          <AlertTriangle className="w-10 h-10 text-amber-300 mx-auto mb-3" />
           <p className="font-medium">{error}</p>
           <Button variant="outline" className="mt-4" onClick={() => router.push('/exams')}>返回考试列表</Button>
         </div>
@@ -231,15 +231,15 @@ export default function TakeExamPage({ params }: { params: Promise<{ id: string 
           <h1 className="font-medium text-sm truncate flex-1">{data.exam.title}</h1>
           <div className={cn(
             'flex items-center gap-1.5 font-mono text-sm px-3 py-1 rounded-md border',
-            urgent ? 'bg-red-50 text-red-700 border-red-200' : 'bg-muted text-foreground border-border',
+            urgent ? 'bg-red-500/10 text-red-300 border-red-500/30' : 'bg-muted text-foreground border-border',
           )}>
             <Clock3 className="w-4 h-4" />
             {String(mm).padStart(2, '0')}:{String(ss).padStart(2, '0')}
           </div>
           <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground w-24">
             {saveState === 'saving' && <><Loader2 className="w-3.5 h-3.5 animate-spin" />保存中</>}
-            {saveState === 'saved' && <><CloudUpload className="w-3.5 h-3.5 text-emerald-600" />已保存</>}
-            {saveState === 'error' && <><AlertTriangle className="w-3.5 h-3.5 text-red-600" />保存失败</>}
+            {saveState === 'saved' && <><CloudUpload className="w-3.5 h-3.5 text-emerald-300" />已保存</>}
+            {saveState === 'error' && <><AlertTriangle className="w-3.5 h-3.5 text-red-300" />保存失败</>}
           </div>
           <Button size="sm" onClick={() => setShowSubmit(true)}>
             <Send className="w-3.5 h-3.5 mr-1" />
@@ -262,7 +262,7 @@ export default function TakeExamPage({ params }: { params: Promise<{ id: string 
                 className={cn(
                   'flex items-center gap-1 text-xs px-2.5 py-1 rounded-md border transition-colors',
                   marked[q.question_id]
-                    ? 'bg-amber-50 text-amber-700 border-amber-300'
+                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
                     : 'text-muted-foreground border-border hover:bg-muted',
                 )}
               >
@@ -489,12 +489,12 @@ export default function TakeExamPage({ params }: { params: Promise<{ id: string 
           <div className="relative bg-card border border-border rounded-xl p-6 w-full max-w-sm shadow-xl">
             <h3 className="font-serif font-bold text-lg mb-2">确认交卷？</h3>
             <div className="text-sm text-muted-foreground space-y-1.5">
-              <p>共 {questions.length} 题，已答 <span className="text-emerald-700 font-medium">{answeredCount}</span> 题</p>
+              <p>共 {questions.length} 题，已答 <span className="text-emerald-300 font-medium">{answeredCount}</span> 题</p>
               {questions.length - answeredCount > 0 && (
-                <p className="text-amber-700">还有 {questions.length - answeredCount} 题未作答，交卷后不可修改</p>
+                <p className="text-amber-300">还有 {questions.length - answeredCount} 题未作答，交卷后不可修改</p>
               )}
             </div>
-            {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
+            {error && <p className="text-xs text-red-300 mt-3">{error}</p>}
             <div className="flex gap-3 mt-6">
               <Button variant="outline" className="flex-1" disabled={submitting} onClick={() => setShowSubmit(false)}>
                 再检查一下

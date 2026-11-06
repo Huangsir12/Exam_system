@@ -11,8 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { QUESTION_TYPE_LABELS, type Difficulty, type Question, type QuestionType } from '@/lib/types';
-import { ArrowDown, ArrowUp, CheckCircle2, Eye, Loader2, Plus, RefreshCw, Trash2, XCircle } from 'lucide-react';
+import { fmtDateTime, normalizePaperMode, QUESTION_TYPE_LABELS, type Difficulty, type Question, type QuestionType } from '@/lib/types';
+import { ArrowDown, ArrowUp, CheckCircle2, Eye, Loader2, Plus, RefreshCw, ShieldCheck, Shuffle, Trash2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TYPE_ORDER: Question['type'][] = ['single', 'multiple', 'judge', 'fill', 'essay'];
@@ -64,6 +64,25 @@ export default function PaperPage() {
   const [message, setMessage] = useState('');
 
   const editable = ['draft', 'pending'].includes(exam.status);
+  const paperMode = normalizePaperMode(exam.paper_mode);
+  const [confirming, setConfirming] = useState(false);
+
+  async function handleConfirm() {
+    setMessage('');
+    setConfirming(true);
+    try {
+      const res = await fetch(`/api/exams/${exam.id}/confirm`, { method: 'POST' });
+      const json = await res.json();
+      if (json.code !== 0) {
+        setMessage(`确认失败：${json.message}`);
+        return;
+      }
+      setMessage('试卷已确认，可以发布考试');
+      await reloadExam();
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/exams/${exam.id}/questions`);
@@ -185,15 +204,58 @@ export default function PaperPage() {
 
   return (
     <div className="space-y-5 max-w-5xl">
+      {/* 组卷模式状态 */}
+      {paperMode === 'fixed' ? (
+        <Card className={cn(exam.confirmed_at ? 'border-emerald-500/30 bg-emerald-500/15' : 'border-amber-500/30 bg-amber-500/15')}>
+          <CardContent className="p-4 flex items-center gap-3 flex-wrap">
+            {exam.confirmed_at ? (
+              <>
+                <ShieldCheck className="w-5 h-5 text-emerald-300" />
+                <div className="text-sm">
+                  <span className="font-medium text-emerald-300">固定试卷 · 已确认</span>
+                  <span className="text-muted-foreground ml-2">确认时间 {fmtDateTime(exam.confirmed_at)}，所有考生将使用本试卷</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-5 h-5 text-amber-300" />
+                <div className="text-sm flex-1">
+                  <span className="font-medium text-amber-300">固定试卷 · 待确认</span>
+                  <span className="text-muted-foreground ml-2">请核对全部题目后确认试卷，确认后才能发布考试</span>
+                </div>
+                {editable && (
+                  <Button size="sm" onClick={handleConfirm} disabled={confirming || questions.length === 0}>
+                    {confirming ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-1" />}
+                    确认试卷
+                  </Button>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-indigo-500/30 bg-indigo-500/15">
+          <CardContent className="p-4 flex items-center gap-3 flex-wrap">
+            <Shuffle className="w-5 h-5 text-indigo-300" />
+            <div className="text-sm">
+              <span className="font-medium text-indigo-300">随机试卷 · 题库抽题模式</span>
+              <span className="text-muted-foreground ml-2">
+                本题库共 {questions.length} 题，每位考生开始考试时按配置随机抽题组卷，题序与选项自动乱序
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 校验面板 */}
       {validation && (
-        <Card className={cn(validation.valid ? 'border-emerald-200' : 'border-red-300')}>
+        <Card className={cn(validation.valid ? 'border-emerald-500/30' : 'border-red-500/30')}>
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               {validation.valid ? (
-                <><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="text-sm font-medium text-emerald-700">试卷校验通过</span></>
+                <><CheckCircle2 className="w-4 h-4 text-emerald-300" /><span className="text-sm font-medium text-emerald-300">试卷校验通过</span></>
               ) : (
-                <><XCircle className="w-4 h-4 text-red-600" /><span className="text-sm font-medium text-red-700">校验未通过，请修正后发布</span></>
+                <><XCircle className="w-4 h-4 text-red-300" /><span className="text-sm font-medium text-red-300">校验未通过，请修正后发布</span></>
               )}
               <span className="text-xs text-muted-foreground ml-auto">
                 共 {questions.length} 题 · 实际总分 {validation.actual_total} 分 / 目标 {validation.expected_total} 分
@@ -204,19 +266,19 @@ export default function PaperPage() {
                 const c = validation.count_by_type[t];
                 if (!c || c.expected === 0) return null;
                 return (
-                  <span key={t} className={cn('text-xs px-2.5 py-1 rounded-md', c.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700')}>
+                  <span key={t} className={cn('text-xs px-2.5 py-1 rounded-md', c.ok ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300')}>
                     {QUESTION_TYPE_LABELS[t]} {c.actual}/{c.expected}
                   </span>
                 );
               })}
             </div>
             {validation.errors.length > 0 && (
-              <ul className="text-xs text-red-700 list-disc pl-5 space-y-0.5 max-h-32 overflow-y-auto">
+              <ul className="text-xs text-red-300 list-disc pl-5 space-y-0.5 max-h-32 overflow-y-auto">
                 {validation.errors.slice(0, 12).map((err, i) => <li key={i}>{err}</li>)}
               </ul>
             )}
             {validation.warnings.length > 0 && (
-              <ul className="text-xs text-amber-700 list-disc pl-5 space-y-0.5 max-h-24 overflow-y-auto">
+              <ul className="text-xs text-amber-300 list-disc pl-5 space-y-0.5 max-h-24 overflow-y-auto">
                 {validation.warnings.slice(0, 8).map((w, i) => <li key={i}>{w}</li>)}
               </ul>
             )}
@@ -225,7 +287,7 @@ export default function PaperPage() {
       )}
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <p className="text-sm text-muted-foreground">试卷共 {questions.length} 题，{totalScore} 分</p>
+        <p className="text-sm text-muted-foreground">{paperMode === 'random' ? '题库共' : '试卷共'} {questions.length} 题，{totalScore} 分</p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setPreview(true)}>
             <Eye className="w-4 h-4 mr-1" />预览考生端
@@ -239,13 +301,13 @@ export default function PaperPage() {
       </div>
 
       {message && (
-        <p className={cn('text-sm px-3 py-2 rounded-md', message.includes('失败') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')}>
+        <p className={cn('text-sm px-3 py-2 rounded-md', message.includes('失败') ? 'bg-red-500/10 text-red-300 border border-red-500/30' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30')}>
           {message}
         </p>
       )}
 
       {!editable && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+        <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2">
           考试已{EXAM_STATUS_TEXT[exam.status] ?? exam.status}，试卷内容不可修改。
         </p>
       )}
@@ -279,7 +341,7 @@ export default function PaperPage() {
                                   ? (q.answer as string[]).includes(opt.key)
                                   : q.answer === opt.key;
                                 return (
-                                  <div key={opt.key} className={cn('text-xs px-2.5 py-1.5 rounded-md border', isAnswer ? 'border-emerald-300 bg-emerald-50/60 font-medium' : 'border-border/60 text-muted-foreground')}>
+                                  <div key={opt.key} className={cn('text-xs px-2.5 py-1.5 rounded-md border', isAnswer ? 'border-emerald-500/30 bg-emerald-500/20 font-medium' : 'border-border/60 text-muted-foreground')}>
                                     {opt.key}. {opt.text}
                                   </div>
                                 );
@@ -307,7 +369,7 @@ export default function PaperPage() {
                             <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => regenerate(q)} disabled={regeneratingId === q.id} title="重新生成此题">
                               {regeneratingId === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => deleteQuestion(q)}>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-red-300 hover:text-red-300 hover:bg-red-500/10" onClick={() => deleteQuestion(q)}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditing({ ...q })}>编辑</Button>

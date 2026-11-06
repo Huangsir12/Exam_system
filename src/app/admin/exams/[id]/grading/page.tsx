@@ -127,7 +127,7 @@ export default function GradingPage() {
         <span className="font-bold text-foreground">{items.length}</span> 份答卷待阅卷 · 待评主观题 {totalPending} 道
       </p>
 
-      {message && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{message}</p>}
+      {message && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{message}</p>}
 
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
@@ -160,8 +160,8 @@ export default function GradingPage() {
                     </p>
                   </div>
                   {allGraded
-                    ? <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">阅卷完成</span>
-                    : <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">待阅卷</span>}
+                    ? <span className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-2 py-1">阅卷完成</span>
+                    : <span className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1">待阅卷</span>}
                   {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </button>
 
@@ -172,7 +172,7 @@ export default function GradingPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium">简答题 {ei + 1}</span>
                           <span className="text-xs bg-muted rounded px-2 py-0.5">满分 {essay.score} 分</span>
-                          {essay.graded && <span className="text-xs text-emerald-700">已评 {essay.graded_score} 分</span>}
+                          {essay.graded && <span className="text-xs text-emerald-300">已评 {essay.graded_score} 分</span>}
                         </div>
 
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{essay.content}</p>
@@ -184,14 +184,14 @@ export default function GradingPage() {
                               {essay.my_answer || '（未作答）'}
                             </p>
                           </div>
-                          <div className="border border-emerald-200 bg-emerald-50/40 rounded-lg p-3.5">
-                            <p className="text-xs text-emerald-700 mb-1.5">参考答案与评分要点</p>
+                          <div className="border border-emerald-500/30 bg-emerald-500/15 rounded-lg p-3.5">
+                            <p className="text-xs text-emerald-300 mb-1.5">参考答案与评分要点</p>
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{essay.reference}</p>
                             {essay.points.length > 0 && (
                               <ul className="mt-2 space-y-1">
                                 {essay.points.map((point, i) => (
                                   <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
-                                    <span className="text-emerald-600">•</span>{point}
+                                    <span className="text-emerald-300">•</span>{point}
                                   </li>
                                 ))}
                               </ul>

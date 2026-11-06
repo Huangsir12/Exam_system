@@ -4,6 +4,7 @@ import { requireAdmin, writeLog } from '@/lib/auth';
 import type { Difficulty, KnowledgeDocument, QuestionType } from '@/lib/types';
 import { dedupeQuestions, generateQuestionBatch, isSimilarToAny, QUESTION_TYPE_LABEL } from '@/lib/generator';
 import { splitIntoChunks } from '@/lib/docparse';
+import { normalizePaperMode } from '@/lib/types';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -36,7 +37,12 @@ export async function POST(request: Request, ctx: Ctx): Promise<Response> {
 
   const documentIds = (exam.document_ids as string[]) ?? [];
   const contentScope = (exam.content_scope as { docId: string; chapters: string[] }[] | null) ?? [];
-  const questionConfig = (exam.question_config as { type: QuestionType; count: number; score: number; difficulty: { easy: number; medium: number; hard: number } }[]) ?? [];
+  const rawConfig = (exam.question_config as { type: QuestionType; count: number; score: number; difficulty: { easy: number; medium: number; hard: number } }[]) ?? [];
+  // 随机试卷：题库题量按配置的 2 倍生成（至少多 2 题），保证考生抽题有足够随机性
+  const isRandomMode = normalizePaperMode(exam.paper_mode as string) === 'random';
+  const questionConfig = rawConfig.map((c) =>
+    isRandomMode ? { ...c, count: Math.max(c.count * 2, c.count + 2) } : c,
+  );
 
   const { data: docs, error: dErr } = await client.from('documents').select('*').in('id', documentIds);
   if (dErr || !docs || docs.length === 0) {
@@ -195,9 +201,11 @@ export async function POST(request: Request, ctx: Ctx): Promise<Response> {
           }
         }
 
-        // 汇总总分
+        // 汇总总分：随机试卷按抽题配置计算卷面总分；固定试卷为题库全部题目合计
         const { data: qs } = await client.from('questions').select('score').eq('exam_id', id);
-        const totalScore = (qs ?? []).reduce((s: number, q) => s + Number(q.score), 0);
+        const totalScore = isRandomMode
+          ? rawConfig.reduce((s, c) => s + c.count * c.score, 0)
+          : (qs ?? []).reduce((s: number, q) => s + Number(q.score), 0);
         const completed = generated >= totalPlanned;
         await client
           .from('exams')
@@ -205,6 +213,7 @@ export async function POST(request: Request, ctx: Ctx): Promise<Response> {
             generation_status: completed ? 'success' : 'failed',
             generation_error: completed ? null : `题量不足：${shortage.join('；') || `实际 ${generated}/${totalPlanned}`}，请重新生成或在编辑页补充`,
             total_score: totalScore,
+            confirmed_at: null, // 重新生成后固定试卷需重新确认
             updated_at: new Date().toISOString(),
           })
           .eq('id', id);

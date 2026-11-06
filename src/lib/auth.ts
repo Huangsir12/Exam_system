@@ -3,7 +3,15 @@ import { cookies } from 'next/headers';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import type { SessionInfo } from '@/lib/types';
 
-export const SESSION_COOKIE = 'exam_session';
+// 管理员与考生使用相互独立的会话 Cookie，保证同一浏览器双端共存、互不顶号
+export const ADMIN_SESSION_COOKIE = 'exam_admin_session';
+export const CANDIDATE_SESSION_COOKIE = 'exam_candidate_session';
+export type SessionRole = 'admin' | 'candidate';
+
+export function sessionCookieFor(role: SessionRole): string {
+  return role === 'admin' ? ADMIN_SESSION_COOKIE : CANDIDATE_SESSION_COOKIE;
+}
+
 const SESSION_TTL_HOURS = 24 * 3; // 3 天
 
 // ===================== 密码 =====================
@@ -47,9 +55,9 @@ export async function createSession(params: {
   return token;
 }
 
-export async function getSession(): Promise<SessionInfo | null> {
+export async function getSession(role: SessionRole): Promise<SessionInfo | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const token = cookieStore.get(sessionCookieFor(role))?.value;
   if (!token) return null;
   const client = getSupabaseClient();
   const { data, error } = await client
@@ -59,28 +67,29 @@ export async function getSession(): Promise<SessionInfo | null> {
     .gt('expires_at', new Date().toISOString())
     .maybeSingle();
   if (error) throw new Error(`查询会话失败: ${error.message}`);
-  return (data as SessionInfo | null) ?? null;
+  if (!data || data.user_type !== role) return null;
+  return data as SessionInfo;
 }
 
 export async function requireAdmin(): Promise<SessionInfo> {
-  const session = await getSession();
-  if (!session || session.user_type !== 'admin') {
+  const session = await getSession('admin');
+  if (!session) {
     throw new AuthError('未登录或无管理员权限', 401);
   }
   return session;
 }
 
 export async function requireCandidate(): Promise<SessionInfo> {
-  const session = await getSession();
-  if (!session || session.user_type !== 'candidate') {
+  const session = await getSession('candidate');
+  if (!session) {
     throw new AuthError('未登录或考生身份无效', 401);
   }
   return session;
 }
 
-export async function destroySession(): Promise<void> {
+export async function destroySession(role: SessionRole): Promise<void> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const token = cookieStore.get(sessionCookieFor(role))?.value;
   if (!token) return;
   const client = getSupabaseClient();
   const { error } = await client.from('sessions').delete().eq('token', token);

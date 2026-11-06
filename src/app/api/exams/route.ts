@@ -127,8 +127,8 @@ export const POST = withErrorHandling(async (request: Request): Promise<NextResp
   if (passScore < 0 || passScore > totalScore) return fail('及格分须在 0 与总分之间');
   const maxAttempts = Math.floor(Number(body.max_attempts ?? 1));
   if (!maxAttempts || maxAttempts < 1 || maxAttempts > 10) return fail('可考次数须在 1~10 之间');
-  const paperMode = ['uniform', 'shuffle', 'random_equal'].includes(body.paper_mode ?? '') ? body.paper_mode : 'uniform';
-  const questionOrder = body.question_order === 'random' ? 'random' : 'fixed';
+  const paperMode = body.paper_mode === 'random' ? 'random' : 'fixed';
+  const questionOrder = paperMode === 'random' ? 'random' : 'fixed';
   const visibility = ['immediate', 'after_end', 'manual'].includes(body.result_visibility ?? '') ? body.result_visibility : 'manual';
 
   const { data, error } = await client

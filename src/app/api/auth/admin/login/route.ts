@@ -1,7 +1,7 @@
 // 认证：管理员登录
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { checkRateLimit, createSession, SESSION_COOKIE, verifyPassword, writeLog } from '@/lib/auth';
+import { ADMIN_SESSION_COOKIE, checkRateLimit, createSession, verifyPassword, writeLog } from '@/lib/auth';
 import { fail, ok, withErrorHandling } from '@/lib/api';
 
 export const POST = withErrorHandling(async (request: Request): Promise<NextResponse> => {
@@ -41,7 +41,7 @@ export const POST = withErrorHandling(async (request: Request): Promise<NextResp
   });
 
   const res = ok({ name: admin.name, username: admin.username });
-  res.cookies.set(SESSION_COOKIE, token, {
+  res.cookies.set(ADMIN_SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',

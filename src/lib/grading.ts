@@ -86,24 +86,22 @@ function shuffleWithSeed<T>(arr: T[], seed: number): T[] {
 }
 
 export interface PaperBuildOptions {
-  paperMode: 'uniform' | 'shuffle' | 'random_equal';
-  questionOrder: 'fixed' | 'random';
-  optionShuffle: boolean;
+  paperMode: 'fixed' | 'random';
   questionConfig: { type: QuestionType; count: number }[];
   seed: number;
 }
 /**
  * 根据组卷方式生成考生试卷快照。
- * - uniform：题目与顺序与母版完全一致
- * - shuffle：同卷乱序（题目顺序、选项顺序随机）
- * - random_equal：按题型结构从题池中随机抽取等值题目 + 乱序
+ * - fixed（固定试卷）：题目与顺序与母版完全一致，所有考生同一套卷
+ * - random（随机试卷）：按题型配置从题库随机抽题，题序与选项均乱序，每位考生不同试卷
  */
 export function buildPaperSnapshot(questions: Question[], opts: PaperBuildOptions): PaperSnapshotItem[] {
   const seed = opts.seed || 1;
   let pool = [...questions];
+  const isRandom = opts.paperMode === 'random';
 
-  if (opts.paperMode === 'random_equal') {
-    // 按题型/分值分组抽取配置要求的数量
+  if (isRandom) {
+    // 按题型配置从题库随机抽取（题库题量应大于配置题量）
     const picked: Question[] = [];
     for (const cfg of opts.questionConfig) {
       const sameType = pool.filter((q) => q.type === cfg.type);
@@ -114,7 +112,7 @@ export function buildPaperSnapshot(questions: Question[], opts: PaperBuildOption
   }
 
   let ordered = pool.sort((a, b) => a.sort_order - b.sort_order);
-  if (opts.paperMode === 'shuffle' || opts.questionOrder === 'random' || opts.paperMode === 'random_equal') {
+  if (isRandom) {
     ordered = shuffleWithSeed(ordered, seed + 13);
   }
 
@@ -122,7 +120,7 @@ export function buildPaperSnapshot(questions: Question[], opts: PaperBuildOption
     let options: PaperSnapshotOption[] | null = q.options
       ? q.options.map((o) => ({ key: o.key, text: o.text, original_key: o.key }))
       : null;
-    if (opts.optionShuffle && options && (q.type === 'single' || q.type === 'multiple')) {
+    if (isRandom && options && (q.type === 'single' || q.type === 'multiple')) {
       // 打乱选项顺序后按新位置重新编号 A/B/C/D，original_key 保留母版 key
       const shuffled = shuffleWithSeed(options, seed + idx * 31 + 7);
       options = shuffled.map((o, i) => ({ ...o, key: String.fromCharCode(65 + i) }));

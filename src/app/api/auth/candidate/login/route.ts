@@ -1,7 +1,7 @@
 // 认证：考生登录（手机号 + 验证码 + 姓名匹配名单）
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { checkRateLimit, createSession, SESSION_COOKIE, writeLog } from '@/lib/auth';
+import { CANDIDATE_SESSION_COOKIE, checkRateLimit, createSession, writeLog } from '@/lib/auth';
 import { fail, isValidPhone, ok, withErrorHandling } from '@/lib/api';
 
 export const POST = withErrorHandling(async (request: Request): Promise<NextResponse> => {
@@ -69,7 +69,7 @@ export const POST = withErrorHandling(async (request: Request): Promise<NextResp
   });
 
   const res = ok({ name, phone });
-  res.cookies.set(SESSION_COOKIE, token, {
+  res.cookies.set(CANDIDATE_SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',

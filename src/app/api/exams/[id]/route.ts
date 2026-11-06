@@ -49,7 +49,7 @@ export const PATCH = withErrorHandling(async (request: Request, ctx: Ctx): Promi
   setField('duration_minutes', typeof body.duration_minutes === 'number' ? Math.max(1, Math.floor(body.duration_minutes)) : undefined);
   setField('pass_score', typeof body.pass_score === 'number' ? body.pass_score : undefined);
   setField('max_attempts', typeof body.max_attempts === 'number' ? Math.max(1, Math.floor(body.max_attempts)) : undefined);
-  setField('paper_mode', typeof body.paper_mode === 'string' ? body.paper_mode : undefined);
+  setField('paper_mode', typeof body.paper_mode === 'string' && ['fixed', 'random'].includes(body.paper_mode) ? body.paper_mode : undefined);
   setField('question_order', typeof body.question_order === 'string' ? body.question_order : undefined);
   setField('option_shuffle', typeof body.option_shuffle === 'boolean' ? body.option_shuffle : undefined);
   setField('result_visibility', typeof body.result_visibility === 'string' ? body.result_visibility : undefined);

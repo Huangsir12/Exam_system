@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`antialiased`}>
+      <body className={`antialiased bg-aurora`}>
         {children}
       </body>
     </html>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Rajdhani:wght@500;600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -47,90 +47,59 @@
     'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display:
+    'Rajdhani', 'Noto Sans SC', 'PingFang SC', ui-sans-serif, system-ui,
+    sans-serif;
+  /* 标题与大数字统一走科技感字体（原衬线用法全部映射至此） */
   --font-serif:
-    'Noto Serif SC', 'Songti SC', 'SimSun', ui-serif, Georgia, Cambria,
-    'Times New Roman', Times, serif;
+    'Rajdhani', 'Noto Sans SC', 'PingFang SC', ui-sans-serif, system-ui,
+    sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
 }
 
 :root {
-  --radius: 0.5rem;
-  /* 纸白背景 + 墨色文字 */
-  --background: oklch(0.986 0.002 90);
-  --foreground: oklch(0.24 0.02 240);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.02 240);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.02 240);
-  /* 墨青主色 */
-  --primary: oklch(0.3 0.028 240);
-  --primary-foreground: oklch(0.985 0.002 90);
-  --secondary: oklch(0.955 0.005 240);
-  --secondary-foreground: oklch(0.3 0.028 240);
-  --muted: oklch(0.962 0.004 240);
-  --muted-foreground: oklch(0.52 0.015 240);
-  /* 朱砂点睛 */
-  --accent: oklch(0.94 0.02 30);
-  --accent-foreground: oklch(0.47 0.14 30);
-  --destructive: oklch(0.5 0.15 25);
-  --success: oklch(0.55 0.09 165);
-  --warning: oklch(0.65 0.12 75);
-  --border: oklch(0.908 0.005 240);
-  --input: oklch(0.908 0.005 240);
-  --ring: oklch(0.47 0.06 230);
-  /* 档案标签色板 */
-  --chart-1: oklch(0.42 0.07 240);
-  --chart-2: oklch(0.5 0.1 200);
-  --chart-3: oklch(0.58 0.11 75);
-  --chart-4: oklch(0.55 0.09 165);
-  --chart-5: oklch(0.5 0.11 330);
-  /* 深色侧边栏（墨青近黑） */
-  --sidebar: oklch(0.24 0.022 240);
-  --sidebar-foreground: oklch(0.93 0.005 240);
-  --sidebar-primary: oklch(0.96 0.005 240);
-  --sidebar-primary-foreground: oklch(0.24 0.022 240);
-  --sidebar-accent: oklch(0.3 0.028 240);
-  --sidebar-accent-foreground: oklch(0.96 0.005 240);
-  --sidebar-border: oklch(0.32 0.02 240);
-  --sidebar-ring: oklch(0.6 0.05 230);
-}
-
-.dark {
-  --background: oklch(0.19 0.015 240);
-  --foreground: oklch(0.95 0.005 240);
-  --card: oklch(0.23 0.018 240);
-  --card-foreground: oklch(0.95 0.005 240);
-  --popover: oklch(0.23 0.018 240);
-  --popover-foreground: oklch(0.95 0.005 240);
-  --primary: oklch(0.9 0.01 240);
-  --primary-foreground: oklch(0.24 0.02 240);
-  --secondary: oklch(0.28 0.018 240);
-  --secondary-foreground: oklch(0.95 0.005 240);
-  --muted: oklch(0.28 0.018 240);
-  --muted-foreground: oklch(0.68 0.015 240);
-  --accent: oklch(0.3 0.04 30);
-  --accent-foreground: oklch(0.8 0.08 30);
-  --destructive: oklch(0.6 0.17 25);
-  --success: oklch(0.65 0.1 165);
-  --warning: oklch(0.72 0.12 75);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.05 230);
-  --chart-1: oklch(0.6 0.09 240);
-  --chart-2: oklch(0.65 0.11 200);
-  --chart-3: oklch(0.68 0.12 75);
-  --chart-4: oklch(0.65 0.1 165);
-  --chart-5: oklch(0.62 0.12 330);
-  --sidebar: oklch(0.21 0.018 240);
-  --sidebar-foreground: oklch(0.93 0.005 240);
-  --sidebar-primary: oklch(0.6 0.09 240);
-  --sidebar-primary-foreground: oklch(0.985 0.002 90);
-  --sidebar-accent: oklch(0.28 0.02 240);
-  --sidebar-accent-foreground: oklch(0.96 0.005 240);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.6 0.05 230);
+  --radius: 0.625rem;
+  /* 深空驾驶舱：午夜蓝黑打底 */
+  --background: oklch(0.15 0.018 255);
+  --foreground: oklch(0.94 0.008 240);
+  /* 悬浮舱体卡片 */
+  --card: oklch(0.19 0.02 255);
+  --card-foreground: oklch(0.94 0.008 240);
+  --popover: oklch(0.2 0.022 255);
+  --popover-foreground: oklch(0.94 0.008 240);
+  /* 电光青：AI 能量主色 */
+  --primary: oklch(0.8 0.13 195);
+  --primary-foreground: oklch(0.16 0.03 240);
+  --secondary: oklch(0.24 0.025 255);
+  --secondary-foreground: oklch(0.92 0.01 240);
+  --muted: oklch(0.23 0.02 255);
+  --muted-foreground: oklch(0.68 0.02 240);
+  /* AI 紫罗兰点缀 */
+  --accent: oklch(0.26 0.045 285);
+  --accent-foreground: oklch(0.85 0.1 290);
+  --destructive: oklch(0.64 0.2 25);
+  --success: oklch(0.72 0.13 165);
+  --warning: oklch(0.78 0.13 80);
+  --border: oklch(0.94 0.03 220 / 12%);
+  --input: oklch(0.94 0.03 220 / 16%);
+  --ring: oklch(0.8 0.13 195);
+  /* 全息数据色板 */
+  --chart-1: oklch(0.8 0.13 195);
+  --chart-2: oklch(0.68 0.13 240);
+  --chart-3: oklch(0.7 0.14 290);
+  --chart-4: oklch(0.72 0.13 165);
+  --chart-5: oklch(0.78 0.13 80);
+  /* 更深的侧舷舱 */
+  --sidebar: oklch(0.12 0.016 255);
+  --sidebar-foreground: oklch(0.85 0.015 240);
+  --sidebar-primary: oklch(0.8 0.13 195);
+  --sidebar-primary-foreground: oklch(0.16 0.03 240);
+  --sidebar-accent: oklch(0.22 0.03 240);
+  --sidebar-accent-foreground: oklch(0.96 0.01 220);
+  --sidebar-border: oklch(0.94 0.03 220 / 10%);
+  --sidebar-ring: oklch(0.8 0.13 195);
 }
 
 @layer base {
@@ -146,16 +115,126 @@ body {
   @apply font-sans;
 }
 
+/* 数字与英文的科技字体 */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
 /* 数字表格对齐 */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* ============ 深空氛围 ============ */
+/* 全局极光背景：两片呼吸的能量云 + 顶部微光栅格 */
+.bg-aurora {
+  position: relative;
+  isolation: isolate;
+}
+.bg-aurora::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 40% at 18% 0%, oklch(0.8 0.13 195 / 12%) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 38% at 88% 12%, oklch(0.7 0.14 290 / 10%) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 45% at 50% 110%, oklch(0.68 0.13 240 / 9%) 0%, transparent 70%);
+  animation: aurora-breathe 9s ease-in-out infinite alternate;
+}
+.bg-aurora::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(oklch(0.94 0.03 220 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.94 0.03 220 / 4%) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 75%);
+}
+@keyframes aurora-breathe {
+  from {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* 渐变能量文字（青 → 紫） */
+.text-gradient {
+  background: linear-gradient(100deg, oklch(0.85 0.12 195) 10%, oklch(0.72 0.13 240) 55%, oklch(0.72 0.15 290) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 主按钮能量辉光 */
+.btn-glow {
+  box-shadow:
+    0 0 0 1px oklch(0.8 0.13 195 / 35%),
+    0 0 18px oklch(0.8 0.13 195 / 30%),
+    0 4px 24px -6px oklch(0.8 0.13 195 / 35%);
+  transition: box-shadow 0.2s ease-out, transform 0.15s ease-out, filter 0.2s ease-out;
+}
+.btn-glow:hover {
+  box-shadow:
+    0 0 0 1px oklch(0.8 0.13 195 / 55%),
+    0 0 26px oklch(0.8 0.13 195 / 45%),
+    0 6px 32px -6px oklch(0.8 0.13 195 / 50%);
+  filter: brightness(1.06);
+}
+.btn-glow:active {
+  transform: translateY(1px);
+}
+
+/* 卡片微光描边，hover 泛青光 */
+.card-tech {
+  position: relative;
+  background: linear-gradient(165deg, oklch(0.21 0.022 255 / 92%) 0%, oklch(0.18 0.02 255 / 96%) 100%);
+  border: 1px solid oklch(0.94 0.03 220 / 10%);
+  box-shadow: 0 8px 32px -16px oklch(0 0 0 / 55%);
+  transition: border-color 0.2s ease-out, box-shadow 0.25s ease-out, transform 0.2s ease-out;
+}
+.card-tech:hover {
+  border-color: oklch(0.8 0.13 195 / 32%);
+  box-shadow:
+    0 8px 32px -16px oklch(0 0 0 / 55%),
+    0 0 24px -6px oklch(0.8 0.13 195 / 22%);
+}
+
+/* 输入框聚焦青光环 */
+.input-tech:focus-within {
+  border-color: oklch(0.8 0.13 195 / 55%);
+  box-shadow: 0 0 0 3px oklch(0.8 0.13 195 / 18%);
+}
+
+/* 呼吸的光点（AI 脉动） */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px oklch(0.8 0.13 195 / 80%);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 3px oklch(0.8 0.13 195 / 40%);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
 /* 页面进入动效：淡入 + 轻微上移 */
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -163,5 +242,32 @@ body {
   }
 }
 .page-enter {
-  animation: page-in 0.22s ease-out both;
+  animation: page-in 0.25s ease-out both;
+}
+
+/* 标题下的能量分割线 */
+.divider-glow {
+  height: 1px;
+  background: linear-gradient(90deg, oklch(0.8 0.13 195 / 70%) 0%, oklch(0.7 0.14 290 / 40%) 55%, transparent 100%);
+}
+
+/* 滚动条融入深空 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.3 0.03 250);
+  border-radius: 8px;
+  border: 2px solid oklch(0.15 0.018 255);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.4 0.05 220);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::selection {
+  background: oklch(0.8 0.13 195 / 28%);
 }

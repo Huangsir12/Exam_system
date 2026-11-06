@@ -207,7 +207,7 @@ export default function CandidatesPage() {
                 <Upload className="w-4 h-4 mr-1" />导入名单
               </Button>
               {candidates.length > 0 && (
-                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={removeAll}>清空名单</Button>
+                <Button variant="ghost" size="sm" className="text-red-300 hover:text-red-300 hover:bg-red-500/10" onClick={removeAll}>清空名单</Button>
               )}
             </>
           )}
@@ -215,12 +215,12 @@ export default function CandidatesPage() {
         </div>
       </div>
 
-      {message && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{message}</p>}
+      {message && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{message}</p>}
 
       {importResult && (
-        <Card className="border-emerald-200">
+        <Card className="border-emerald-500/30">
           <CardContent className="p-4 text-sm space-y-1">
-            <p className="font-medium text-emerald-700">
+            <p className="font-medium text-emerald-300">
               导入完成：新增 {importResult.imported} 人{importResult.updated > 0 ? `，更新 ${importResult.updated} 人` : ''}{importResult.skipped > 0 ? `，跳过 ${importResult.skipped} 人` : ''}，失败 {importResult.errors.length} 行
             </p>
             {importResult.errors.length > 0 && (
@@ -229,7 +229,7 @@ export default function CandidatesPage() {
                   <thead><tr className="text-left text-muted-foreground"><th className="py-1">行号</th><th>姓名</th><th>手机号</th><th>原因</th></tr></thead>
                   <tbody>
                     {importResult.errors.map((err, i) => (
-                      <tr key={i} className="border-t border-border/50 text-red-700">
+                      <tr key={i} className="border-t border-border/50 text-red-300">
                         <td className="py-1">{err.line}</td><td>{err.name}</td><td>{err.phone}</td><td>{err.reason}</td>
                       </tr>
                     ))}
@@ -283,7 +283,7 @@ export default function CandidatesPage() {
                       <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setEditing({ ...c })}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => remove(c)}>
+                      <Button variant="ghost" size="sm" className="h-7 px-2 text-red-300 hover:text-red-300 hover:bg-red-500/10" onClick={() => remove(c)}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
@@ -321,7 +321,7 @@ export default function CandidatesPage() {
                   {previewRows.map((row, i) => {
                     const bad = !row.name || !/^1\d{10}$/.test(row.phone);
                     return (
-                      <tr key={i} className={cn('border-t border-border/50', bad && 'bg-red-50 text-red-700')}>
+                      <tr key={i} className={cn('border-t border-border/50', bad && 'bg-red-500/10 text-red-300')}>
                         <td className="px-3 py-1.5 text-muted-foreground text-xs">{i + 1}</td>
                         <td className="px-3 py-1.5">{row.name || '—'}</td>
                         <td className="px-3 py-1.5 font-mono text-xs">{row.phone || '—'}</td>
@@ -331,7 +331,7 @@ export default function CandidatesPage() {
                 </tbody>
               </table>
             </div>
-            {previewError && <p className="text-xs text-red-600">{previewError}</p>}
+            {previewError && <p className="text-xs text-red-300">{previewError}</p>}
             <p className="text-xs text-muted-foreground">红色行为无效数据（姓名为空或手机号格式错误），导入时将被标记为失败行。</p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowPreview(false)}>取消</Button>
