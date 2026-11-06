@@ -1,5 +1,13 @@
 # 项目上下文
 
+## 项目概览
+
+**智能考试系统**（一期）：组织内部考核平台。核心业务闭环：管理员上传知识文档（PDF/DOCX/TXT/MD）→ LLM 智能组卷 → 审核发布 → 名单内考生在线考试 → 客观题自动阅卷 + 简答题人工阅卷 → 成绩按规则公开 → 多维统计与 CSV 导出 → 操作日志留痕。
+
+- **两类角色**：管理员（账号密码登录）、考生（手机号验证码 + 姓名匹配名单登录）
+- **三种组卷一致性模式**：统一试卷 / 同卷乱序 / 随机等值（`paper_mode`: uniform/shuffle/random_equal）
+- **五种题型**：单选 single / 多选 multiple / 判断 judge / 填空 fill / 简答 essay
+
 ### 版本技术栈
 
 - **Framework**: Next.js 16 (App Router)
@@ -7,29 +15,67 @@
 - **Language**: TypeScript 5
 - **UI 组件**: shadcn/ui (基于 Radix UI)
 - **Styling**: Tailwind CSS 4
+- **数据库**: Supabase（PostgREST，service_role_key 服务端访问，全表 RLS 无 policy，anon 完全阻断）
+- **LLM**: doubao-seed-2-0-pro（出题，SSE 流式输出）
+- **存储**: S3Storage（知识文档原件），FetchClient（文档解析）
+- **图表**: recharts
 
 ## 目录结构
 
 ```
 ├── public/                 # 静态资源
-├── scripts/                # 构建与启动脚本
-│   ├── build.sh            # 构建脚本
-│   ├── dev.sh              # 开发环境启动脚本
-│   ├── prepare.sh          # 预处理脚本
-│   └── start.sh            # 生产环境启动脚本
+├── scripts/                # 构建与启动脚本（预置，勿改）
 ├── src/
-│   ├── app/                # 页面路由与布局
+│   ├── app/                # 页面路由与 API
+│   │   ├── page.tsx              # 入口（按登录态分流）
+│   │   ├── login/                # 考生登录（验证码）
+│   │   ├── exams/                # 考生端：考试列表/详情/答题/结果
+│   │   ├── admin/                # 管理端：登录/总览/文档/考试/日志
+│   │   └── api/                  # 39 个 API 路由（见下）
 │   ├── components/ui/      # Shadcn UI 组件库
-│   ├── hooks/              # 自定义 Hooks
-│   ├── lib/                # 工具库
-│   │   └── utils.ts        # 通用工具函数 (cn)
+│   ├── components/         # status-badge 等业务组件
+│   ├── lib/                # 核心业务库
+│   │   ├── api.ts          # ok()/fail() 统一响应 {code, data|message}、withErrorHandling
+│   │   ├── auth.ts         # requireAdmin/requireCandidate/createSession/writeLog/rateLimit
+│   │   ├── types.ts        # 业务类型与常量（EXAM_STATUS/QUESTION_TYPES 等）
+│   │   ├── generator.ts    # LLM 出题：splitIntoChunks/buildPrompt/sanitizeQuestion/dedupeQuestions
+│   │   ├── grading.ts      # 评分 + 试卷快照 buildPaperSnapshot（三模式 + original_key 映射）
+│   │   └── docparse.ts     # 文档解析：FetchClient + 章节切分
+│   ├── storage/database/shared/schema.ts  # 11 张表定义（drizzle pgTable）
 │   └── server.ts           # 自定义服务端入口
-├── next.config.ts          # Next.js 配置
-├── package.json            # 项目依赖管理
-└── tsconfig.json           # TypeScript 配置
+├── AGENTS.md / DESIGN.md   # 工程规范 / 设计规范（墨青档案室风格）
+└── package.json
 ```
 
-- 项目文件（如 app 目录、pages 目录、components 等）默认初始化到 `src/` 目录下。
+## 核心业务设计（改动前必读）
+
+1. **答案结构统一**：single=`"A"`；multiple=`["A","C"]`；judge=`boolean`；fill=`string[][]`（按空分组，多空可接受答案）；essay=`{reference, points[]}`。options 统一 `[{key, text}]`。
+2. **试卷快照**：`attempts.paper_snapshot` 存题序+选项序+original_key 映射；`attempt_answers.question_snapshot` 存题目完整快照（含映射后答案）。历史试卷不受后续改题/删文档影响。
+3. **评分**：单选/判断精确匹配；多选全对才得分；填空按空匹配（忽略首尾空格/大小写，多空均分）；简答人工阅卷（0~满分 + 评语）。
+4. **幂等**：重复交卷返回 `duplicated:true`；同考生同考试恢复 in_progress attempt；开始考试有事务保护。
+5. **开考保护**：published/ongoing/ended/archived 状态禁止 PATCH/DELETE 题目与重新生成；成绩修正走阅卷通道 `/api/exams/[id]/grading/grade`。
+6. **名单安全**：列表手机号脱敏（maskPhone）；导出含明文但写 operation_logs；删除名单人员不删其成绩记录（attempts 存 candidate_name/phone 快照）。
+7. **权限**：所有 API 服务端校验 session + 角色；考生只能访问本人 attempt（按 phone 匹配）。
+
+## API 路由地图
+
+- **auth**: `admin/login` `candidate/send-code` `candidate/login` `logout` `me`
+- **admin**: `admin/overview` `admin/logs`
+- **documents**: `GET/POST documents` `upload` `[id](GET/DELETE)` `[id]/parse` `[id]/download`
+- **exams**: `GET/POST exams` `[id](GET/PATCH/DELETE)` `[id]/generate(SSE)` `validate` `publish` `publish-results` `archive` `questions(GET/POST)` `questions/reorder` `candidates(GET/POST/DELETE)` `candidates/import` `candidates/[cid](PATCH/DELETE)` `results` `stats` `grading(GET)` `grading/grade(POST)` `export?kind=results|candidates`
+- **questions**: `[id](PATCH/DELETE)` `[id]/regenerate(POST)`
+- **考生**: `my/exams` `my/exams/[id]` `attempts/start` `attempts/[id](GET)` `answer(POST)` `submit(POST)` `result` `detail`
+
+## 测试账号与数据
+
+- 管理员：`admin` / `Admin@123456`
+- 考生（演示考试"信息安全制度考核（一期）"名单内）：张三 `13800138001`、李四 `13800138002`、王五 `13800138003`
+- 考生验证码：演示模式下 `send-code` 响应返回 `dev_code` 字段（生产接短信网关后移除）
+
+## 数据库变更规范
+
+- 修改 `src/storage/database/shared/schema.ts` 后执行 `coze-coding-ai db upgrade` 同步；禁止直接手写 SQL 改表结构。
+- 所有表 RLS 启用且无 policy；仅服务端通过 `getSupabaseClient()`（service_role_key）访问，权限校验全部在 API 层。
 
 ## 包管理规范
 
@@ -63,3 +109,4 @@
 
 - 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
 - Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+- 视觉规范见 `DESIGN.md`：墨青主色 #24313F、纸白背景 #FAFAF9、朱砂点睛 #B3372B；Noto Sans SC 正文 + Noto Serif SC 标题大数字；克制动效（150-250ms ease-out）。
