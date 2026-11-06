@@ -2,7 +2,7 @@
 
 import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../layout';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,6 +39,14 @@ interface GradingItem {
 }
 
 export default function GradingPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-16 text-muted-foreground text-sm">加载中…</div>}>
+      <GradingInner />
+    </Suspense>
+  );
+}
+
+function GradingInner() {
   const { exam, reload: reloadExam } = useExam();
   const searchParams = useSearchParams();
   const focusAttempt = searchParams.get('attempt');

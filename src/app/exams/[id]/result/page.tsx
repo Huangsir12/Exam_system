@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/client-fetch';
-import { use, useEffect, useState } from 'react';
+import { Suspense, use, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -75,6 +75,14 @@ function fmtStdAnswer(item: ResultItem): string {
 }
 
 export default function ResultPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground text-sm">加载中…</div>}>
+      <ResultInner params={params} />
+    </Suspense>
+  );
+}
+
+function ResultInner({ params }: { params: Promise<{ id: string }> }) {
   use(params);
   const searchParams = useSearchParams();
   const attemptId = searchParams.get('attempt') ?? '';

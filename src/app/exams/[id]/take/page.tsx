@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/client-fetch';
-import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,6 +48,14 @@ function isAnswered(q: PublicQuestion, ans: string | string[] | boolean | undefi
 }
 
 export default function TakeExamPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground text-sm">加载中…</div>}>
+      <TakeExamInner params={params} />
+    </Suspense>
+  );
+}
+
+function TakeExamInner({ params }: { params: Promise<{ id: string }> }) {
   const { id: examId } = use(params);
   const searchParams = useSearchParams();
   const attemptId = searchParams.get('attempt') ?? '';
