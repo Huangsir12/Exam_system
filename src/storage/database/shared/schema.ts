@@ -27,6 +27,7 @@ export const admins = pgTable(
     username: varchar("username", { length: 64 }).notNull().unique(),
     password_hash: text("password_hash").notNull(),
     name: varchar("name", { length: 64 }).notNull(),
+    role: varchar("role", { length: 16 }).notNull().default('normal'), // super=超级管理员（可管理管理员）/ normal=普通管理员
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("admins_username_idx").on(table.username)]

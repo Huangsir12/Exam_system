@@ -4,19 +4,21 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { BookOpenText, ClipboardList, LayoutDashboard, LogOut, ScrollText } from 'lucide-react';
+import { BookOpenText, ClipboardList, LayoutDashboard, LogOut, ScrollText, UserCog } from 'lucide-react';
 
 const NAV = [
   { href: '/admin', label: '数据总览', icon: LayoutDashboard, exact: true },
   { href: '/admin/documents', label: '知识文档', icon: BookOpenText },
   { href: '/admin/exams', label: '考试管理', icon: ClipboardList },
   { href: '/admin/logs', label: '操作日志', icon: ScrollText },
+  { href: '/admin/admins', label: '管理员', icon: UserCog, superOnly: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [name, setName] = useState('');
+  const [role, setRole] = useState('normal');
 
   const isLoginPage = pathname === '/admin/login';
 
@@ -30,9 +32,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           return;
         }
         setName(json.data.admin.user_name ?? '');
+        setRole(json.data.admin.role === 'super' ? 'super' : 'normal');
       })
       .catch(() => router.replace('/admin/login'));
   }, [pathname, isLoginPage, router]);
+
+  const visibleNav = NAV.filter((item) => !item.superOnly || role === 'super');
 
   if (isLoginPage) return <>{children}</>;
 
@@ -53,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
               <Link
@@ -74,7 +79,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
         <div className="p-4 border-t border-sidebar-border">
-          <p className="text-xs text-sidebar-foreground/60 mb-2 truncate">{name}</p>
+          <div className="flex items-center gap-2 mb-2 min-w-0">
+            <p className="text-xs text-sidebar-foreground/60 truncate">{name}</p>
+            {role === 'super' && (
+              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-sidebar-primary/40 bg-sidebar-primary/15 text-sidebar-primary">超管</span>
+            )}
+          </div>
           <button
             onClick={logout}
             className="flex items-center gap-1.5 text-xs text-sidebar-foreground/70 hover:text-sidebar-accent-foreground transition-colors"
@@ -92,7 +102,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button onClick={logout} className="text-xs text-sidebar-foreground/70">退出</button>
         </div>
         <nav className="flex px-2 pb-2 gap-1 overflow-x-auto">
-          {NAV.map((item) => {
+          {visibleNav.map((item) => {
             const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
               <Link

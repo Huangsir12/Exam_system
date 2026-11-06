@@ -85,7 +85,7 @@ export default function CandidateLoginPage() {
             登录并查看我的考试
           </Button>
           <p className="text-xs text-muted-foreground text-center leading-relaxed">
-            登录后可查看与你相关的考试；仅名单内考生可进入对应考试
+            登录后可查看与你相关的考试
           </p>
         </form>
 

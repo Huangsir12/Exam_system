@@ -87,6 +87,24 @@ export async function requireCandidate(): Promise<SessionInfo> {
   return session;
 }
 
+/** 查询管理员角色（super / normal） */
+export async function getAdminRole(adminId: string): Promise<string | null> {
+  const client = getSupabaseClient();
+  const { data, error } = await client.from('admins').select('role').eq('id', adminId).maybeSingle();
+  if (error) throw new Error(`查询管理员角色失败: ${error.message}`);
+  return (data?.role as string) ?? null;
+}
+
+/** 超级管理员校验：仅 super 角色可管理管理员账号 */
+export async function requireSuperAdmin(): Promise<SessionInfo> {
+  const session = await requireAdmin();
+  const role = await getAdminRole(session.user_id);
+  if (role !== 'super') {
+    throw new AuthError('仅超级管理员可执行此操作', 403);
+  }
+  return session;
+}
+
 export async function destroySession(role: SessionRole): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieFor(role))?.value;

@@ -4,7 +4,7 @@
 
 **智能考试系统**（一期）：组织内部考核平台。核心业务闭环：管理员上传知识文档（PDF/DOCX/TXT/MD）→ LLM 智能组卷 → 审核发布 → 名单内考生在线考试 → 客观题自动阅卷 + 简答题人工阅卷 → 成绩按规则公开 → 多维统计与 CSV 导出 → 操作日志留痕。
 
-- **两类角色**：管理员（账号密码登录）、考生（姓名 + 手机号登录，无需验证码；名单外用户可登录但看不到任何考试，考试详情/开考由服务端名单校验拦截 403）
+- **两类角色**：管理员（账号密码登录，分超级 `super`/普通 `normal` 两级，仅超管可管理管理员账号）、考生（姓名 + 手机号登录，无需验证码；名单外用户可登录但看不到任何考试，考试详情/开考由服务端名单校验拦截 403）
 - **会话隔离**：管理员与考生使用独立 cookie（`exam_admin_session` / `exam_candidate_session`），同一浏览器双角色并存互不顶号；`/api/auth/me` 返回 `{admin, candidate}` 双角色状态
 - **两种组卷模式**：固定试卷 `fixed`（全员同卷，生成后需管理员确认 `confirmed_at` 才能发布，题目变更自动重置确认）/ 随机试卷 `random`（按配置 2 倍生成题库，考生 start 时随机抽题 + 题序选项乱序）；历史值 uniform/shuffle→fixed、random_equal→random，读取侧用 `normalizePaperMode` 兼容
 - **五种题型**：单选 single / 多选 multiple / 判断 judge / 填空 fill / 简答 essay
@@ -61,7 +61,7 @@
 ## API 路由地图
 
 - **auth**: `admin/login` `candidate/login` `logout` `me`
-- **admin**: `admin/overview` `admin/logs`
+- **admin**: `admin/overview` `admin/logs` `admin/admins(GET/POST，仅超管)` `admin/admins/[id](PATCH/DELETE，仅超管)`
 - **documents**: `GET/POST documents` `upload` `[id](GET/DELETE)` `[id]/parse` `[id]/download`
 - **exams**: `GET/POST exams` `[id](GET/PATCH/DELETE)` `[id]/generate(SSE)` `validate` `confirm` `publish` `publish-results` `archive` `questions(GET/POST)` `questions/reorder` `candidates(GET/POST/DELETE)` `candidates/import` `candidates/[cid](PATCH/DELETE)` `results` `stats` `grading(GET)` `grading/grade(POST)` `export?kind=results|candidates`
 - **questions**: `[id](PATCH/DELETE)` `[id]/regenerate(POST)`
@@ -69,7 +69,8 @@
 
 ## 测试账号与数据
 
-- 管理员：`admin` / `Admin@123456`
+- 超级管理员：`admin` / `Admin@123456`（可管理管理员账号）
+- 普通管理员：`huangliangliang` / `hll123456`（黄亮亮，无管理员管理权限）
 - 考生（演示考试"信息安全制度考核（一期）"名单内）：张三 `13800138001`、李四 `13800138002`、王五 `13800138003`
 - 考生登录：仅需姓名 + 手机号（`verification_codes` 表已停用，保留未删）
 
