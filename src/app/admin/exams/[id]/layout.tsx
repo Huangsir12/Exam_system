@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/client-fetch';
-import { createContext, use, useCallback, useContext, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -9,19 +9,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { EXAM_STATUS_LABELS, fmtDateTime, type Exam } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-
-interface ExamContextValue {
-  exam: Exam;
-  reload: () => Promise<void>;
-}
-
-const ExamContext = createContext<ExamContextValue | null>(null);
-
-export function useExam(): ExamContextValue {
-  const ctx = useContext(ExamContext);
-  if (!ctx) throw new Error('useExam must be used within exam layout');
-  return ctx;
-}
+import { ExamContext } from './exam-context';
 
 const TABS = [
   { href: '', label: '考试设置' },

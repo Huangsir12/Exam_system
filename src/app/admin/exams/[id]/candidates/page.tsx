@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/client-fetch';
-import { useExam } from '../layout';
+import { useExam } from '../exam-context';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

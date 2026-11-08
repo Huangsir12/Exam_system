@@ -108,6 +108,12 @@
    2. preload, preconnect, dns-prefetch 通过 ReactDOM 的 preload、preconnect、dns-prefetch 方法引入
    3. json-ld 可阅读 https://nextjs.org/docs/app/guides/json-ld
 
+### 构建规范（dev 不报、build 硬错的坑）
+
+- `page.tsx` / `layout.tsx` 只允许导出 `default` 与 Next 保留字段（metadata/generateMetadata/dynamic 等），**严禁导出自定义 hook/工具函数**。共享 hook 抽到独立文件（如 `exam-context.ts`），layout 与页面分别 import。
+- 使用 `useSearchParams()` 的组件必须包 `<Suspense>` 边界，否则 build 触发 CSR bailout。
+- 交付部署前必须本地验证 `pnpm run build` 成功（先停 dev server 释放 `.next/lock`）。
+
 ## UI 设计与组件规范 (UI & Styling Standards)
 
 - 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下

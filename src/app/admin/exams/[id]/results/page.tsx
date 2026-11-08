@@ -1,7 +1,7 @@
 'use client';
 
 import { apiFetch } from '@/lib/client-fetch';
-import { useExam } from '../layout';
+import { useExam } from '../exam-context';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
