@@ -163,8 +163,3 @@ Desktop.ini
 # Misc
 .coze-logs
 .codegraph/
-
-# Preview files
-.preview
-.cozeproj/reduction
-.codegraph
