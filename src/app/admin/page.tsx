@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/status-badge';
 import { EXAM_STATUS_LABELS } from '@/lib/types';
-import { BookOpenText, ClipboardCheck, ClipboardList, FileClock } from 'lucide-react';
+import { Activity, AlertTriangle, BookOpenText, ClipboardCheck, ClipboardList, FileClock, Radio, RefreshCw } from 'lucide-react';
 
 interface Overview {
   doc_count: number;
@@ -19,13 +19,16 @@ interface Overview {
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<Overview | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     apiFetch('/api/admin/overview')
       .then((r) => r.json())
       .then((json) => {
         if (json.code === 0) setData(json.data);
-      });
+        else setError(json.message || '总览数据加载失败');
+      })
+      .catch(() => setError('网络异常，总览数据加载失败'));
   }, []);
 
   const cards = [
@@ -37,20 +40,33 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6 page-enter">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-wide">数据总览</h1>
-        <div className="divider-glow w-24 mt-2" />
-        <p className="text-sm text-muted-foreground mt-2">系统整体运行情况一览</p>
+      <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-[linear-gradient(135deg,oklch(0.22_0.035_250/92%),oklch(0.17_0.024_275/96%))] p-5 sm:p-7 shadow-[0_20px_60px_-35px_oklch(0.8_0.13_195/45%)]">
+        <div className="absolute -right-20 -top-24 size-64 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <div className="relative flex items-end justify-between gap-5">
+          <div>
+            <div className="tech-kicker"><Radio className="size-3" aria-hidden="true" /> Command center online</div>
+            <h1 className="mt-3 font-display text-2xl sm:text-3xl font-bold tracking-wide">数据总览</h1>
+            <p className="text-sm text-muted-foreground mt-2">实时掌握文档、考试与阅卷流程</p>
+          </div>
+          <Activity className="hidden size-10 text-primary/60 sm:block" aria-hidden="true" />
+        </div>
       </div>
+
+      {error && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          <span className="flex items-center gap-2"><AlertTriangle className="size-4" aria-hidden="true" />{error}</span>
+          <button className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-2 hover:bg-amber-500/10" onClick={() => window.location.reload()}><RefreshCw className="size-3.5" aria-hidden="true" />重试</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
           <Link key={c.label} href={c.href}>
-            <Card className="card-tech cursor-pointer h-full">
+            <Card className="card-tech holo-panel cursor-pointer h-full group">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{c.label}</span>
-                  <c.icon className="w-4 h-4 text-primary/80" />
+                  <span className="flex size-8 items-center justify-center rounded-lg border border-primary/15 bg-primary/5 transition-colors group-hover:bg-primary/10"><c.icon className="w-4 h-4 text-primary/80" aria-hidden="true" /></span>
                 </div>
                 <p className="font-display text-3xl font-bold mt-2 text-gradient">{c.value}</p>
               </CardContent>
@@ -61,7 +77,7 @@ export default function AdminDashboardPage() {
 
       <div>
         <h2 className="font-serif text-lg font-bold mb-3">最近创建的考试</h2>
-        <Card>
+        <Card className="card-tech overflow-hidden">
           <CardContent className="p-0">
             {!data ? (
               <p className="text-sm text-muted-foreground p-6 text-center">加载中…</p>

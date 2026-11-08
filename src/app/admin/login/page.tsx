@@ -3,10 +3,11 @@
 import { apiFetch, saveClientToken } from '@/lib/client-fetch';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +46,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 page-enter">
+    <main id="main-content" tabIndex={-1} className="min-h-dvh flex items-center justify-center px-4 py-10 page-enter outline-none">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-primary/40 bg-primary/10 mb-5 shadow-[0_0_36px_-6px_oklch(0.8_0.13_195/45%)]">
@@ -58,29 +60,32 @@ export default function AdminLoginPage() {
           <p className="text-sm text-muted-foreground mt-3">智能考试系统 · 管理驾驶舱</p>
         </div>
 
-        <form onSubmit={handleLogin} className="card-tech rounded-xl p-6 sm:p-8 space-y-5">
+        <form onSubmit={handleLogin} className="card-tech holo-panel rounded-xl p-6 sm:p-8 space-y-5" noValidate>
           <div className="space-y-2">
             <Label htmlFor="username" className="text-foreground/80">账号</Label>
             <div className="input-tech rounded-md transition-shadow">
-              <Input id="username" placeholder="管理员账号" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" className="bg-secondary/60 border-input" />
+              <Input id="username" placeholder="管理员账号" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" aria-invalid={error.includes('账号') || undefined} className="bg-secondary/60 border-input" />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="text-foreground/80">密码</Label>
-            <div className="input-tech rounded-md transition-shadow">
-              <Input id="password" type="password" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" className="bg-secondary/60 border-input" />
+            <div className="input-tech relative rounded-md transition-shadow">
+              <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" aria-invalid={error.includes('密码') || undefined} className="bg-secondary/60 border-input pr-11" />
+              <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-0 top-0 flex size-9 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={showPassword ? '隐藏密码' : '显示密码'} aria-pressed={showPassword}>
+                {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
+              </button>
             </div>
           </div>
-          {error && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
           <Button type="submit" className="w-full btn-glow font-semibold" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
             进入驾驶舱
           </Button>
         </form>
         <p className="text-center mt-8">
-          <a href="/login" className="text-xs text-muted-foreground hover:text-primary transition-colors">← 返回考生入口</a>
+          <Link href="/login" className="inline-flex min-h-11 items-center text-xs text-muted-foreground hover:text-primary transition-colors">← 返回考生入口</Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

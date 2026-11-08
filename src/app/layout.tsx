@@ -22,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={`antialiased bg-aurora`}>
+        <a href="#main-content" className="skip-link">跳到主要内容</a>
         {children}
       </body>
     </html>

@@ -113,6 +113,35 @@
 
 body {
   @apply font-sans;
+  min-height: 100dvh;
+  background-image: linear-gradient(180deg, oklch(0.18 0.022 255 / 35%), transparent 34rem);
+  text-rendering: optimizeLegibility;
+  touch-action: manipulation;
+}
+
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(-160%);
+  border-radius: 0.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: transform 150ms ease-out;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }
 
 /* 数字与英文的科技字体 */
@@ -209,6 +238,36 @@ body {
     0 0 24px -6px oklch(0.8 0.13 195 / 22%);
 }
 
+/* 核心数据面板：克制的全息扫光，不抢夺内容注意力 */
+.holo-panel {
+  position: relative;
+  overflow: hidden;
+}
+.holo-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 20%, oklch(0.8 0.13 195 / 5%) 48%, transparent 72%);
+  transform: translateX(-70%);
+  transition: transform 500ms ease-out;
+}
+.holo-panel:hover::after {
+  transform: translateX(70%);
+}
+
+.tech-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
 /* 输入框聚焦青光环 */
 .input-tech:focus-within {
   border-color: oklch(0.8 0.13 195 / 55%);
@@ -270,4 +329,15 @@ body {
 
 ::selection {
   background: oklch(0.8 0.13 195 / 28%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -3,6 +3,7 @@
 import { apiFetch, saveClientToken } from '@/lib/client-fetch';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,7 +43,7 @@ export default function CandidateLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 page-enter">
+    <main id="main-content" tabIndex={-1} className="min-h-dvh flex items-center justify-center px-4 py-10 page-enter outline-none">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl border border-primary/40 bg-primary/10 mb-5 shadow-[0_0_36px_-6px_oklch(0.8_0.13_195/45%)]">
@@ -56,7 +57,7 @@ export default function CandidateLoginPage() {
           <p className="text-sm text-muted-foreground mt-3">考生登录 · 姓名 + 手机号</p>
         </div>
 
-        <form onSubmit={handleLogin} className="card-tech rounded-xl p-6 sm:p-8 space-y-5">
+        <form onSubmit={handleLogin} className="card-tech holo-panel rounded-xl p-6 sm:p-8 space-y-5" noValidate>
           <div className="space-y-2">
             <Label htmlFor="name">姓名</Label>
             <Input
@@ -66,6 +67,7 @@ export default function CandidateLoginPage() {
               onChange={(e) => setName(e.target.value)}
               maxLength={32}
               autoComplete="name"
+              aria-invalid={error.includes('姓名') || undefined}
             />
           </div>
           <div className="space-y-2">
@@ -77,10 +79,12 @@ export default function CandidateLoginPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
               autoComplete="tel"
+              inputMode="numeric"
+              aria-invalid={error.includes('手机号') || undefined}
             />
           </div>
 
-          {error && <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">{error}</p>}
 
           <Button type="submit" className="w-full btn-glow font-semibold" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
@@ -92,11 +96,11 @@ export default function CandidateLoginPage() {
         </form>
 
         <p className="text-center mt-6">
-          <a href="/admin/login" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/admin/login" className="inline-flex min-h-11 items-center text-xs text-muted-foreground hover:text-primary transition-colors">
             管理员入口 →
-          </a>
+          </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
