@@ -35,12 +35,22 @@ interface Chunk {
   docName: string;
 }
 
-function buildPrompt(type: QuestionType, count: number, score: number, difficulty: Difficulty | 'mixed', chunks: Chunk[]): string {
+function buildPrompt(
+  type: QuestionType,
+  count: number,
+  score: number,
+  difficulty: Difficulty | 'mixed',
+  chunks: Chunk[],
+  avoidContents: string[],
+): string {
   const typeLabel = QUESTION_TYPE_LABEL[type];
   const diffLabel = difficulty === 'mixed' ? '混合（简单、中等、困难合理分布）' : DIFFICULTY_LABEL[difficulty];
   const materials = chunks
     .map((c, i) => `【材料${i + 1}】（来源：《${c.docName}》章节「${c.title}」）\n${c.text}`)
     .join('\n\n');
+  const avoidance = avoidContents.length > 0
+    ? `\n【必须避开的已有题目】\n下面题目已经生成过。本次不得改写、复述或考查相同表述，请换用其他知识点和材料角度：\n${avoidContents.slice(-20).map((content, index) => `${index + 1}. ${content.slice(0, 120)}`).join('\n')}\n`
+    : '';
 
   const typeSpec =
     type === 'single'
@@ -66,6 +76,7 @@ function buildPrompt(type: QuestionType, count: number, score: number, difficult
   return `你是一位严谨的命题专家。请严格依据下面提供的知识材料命制 ${count} 道${typeLabel}，难度：${diffLabel}，每题 ${score} 分。
 
 ${materials}
+${avoidance}
 
 【命题要求】
 1. 题目必须且只能依据上述材料命制，答案必须能从材料中找到依据，禁止引入材料之外的知识
@@ -167,8 +178,13 @@ export function sanitizeQuestion(raw: unknown, type: QuestionType, score: number
       return null;
     }
   } else if (type === 'multiple') {
-    if (!Array.isArray(q.answer)) return null;
-    const arr = q.answer
+    // 兼容模型偶尔输出 "A,C"、"A、C"，统一转为数组后校验。
+    const rawAnswers = Array.isArray(q.answer)
+      ? q.answer
+      : typeof q.answer === 'string'
+        ? q.answer.split(/[,，、;；\s]+/)
+        : [];
+    const arr = rawAnswers
       .filter((a): a is string => typeof a === 'string')
       .map((a) => cleanChoiceKey(a))
       .filter((a) => /^[A-H]$/.test(a));
@@ -267,11 +283,13 @@ export function isSimilarToAny(content: string, existing: string[], threshold = 
 }
 
 export interface GenerateProgress {
-  type: 'progress' | 'question' | 'batch_error' | 'done';
+  type: 'start' | 'progress' | 'batch_error' | 'type_done' | 'heartbeat' | 'done';
   step?: string;
   current?: number;
   total?: number;
-  question?: GeneratedQuestion;
+  generated?: number;
+  errors?: string[];
+  success?: boolean;
   message?: string;
 }
 
@@ -282,9 +300,10 @@ export async function generateQuestionBatch(
   score: number,
   difficulty: Difficulty | 'mixed',
   chunks: Chunk[],
+  avoidContents: string[] = [],
 ): Promise<GeneratedQuestion[]> {
   const client = new LLMClient(new Config());
-  const prompt = buildPrompt(type, count, score, difficulty, chunks);
+  const prompt = buildPrompt(type, count, score, difficulty, chunks, avoidContents);
   const messages: Message[] = [
     { role: 'system', content: '你是严谨的命题专家，只输出合法 JSON。' },
     { role: 'user', content: prompt },

@@ -3,7 +3,7 @@
 import { apiFetch } from '@/lib/client-fetch';
 import { useExam } from '../exam-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { normalizePaperMode, QUESTION_TYPE_LABELS, RANDOM_PAPER_POOL_MULTIPLIER, type QuestionType } from '@/lib/types';
@@ -28,7 +28,7 @@ export default function GeneratePage() {
   const [running, setRunning] = useState(false);
   const [items, setItems] = useState<ProgressItem[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [result, setResult] = useState<{ generated: number; errors: string[] } | null>(null);
+  const [result, setResult] = useState<{ generated: number; errors: string[]; message: string; success: boolean } | null>(null);
   const startedRef = useRef(false);
   const logBoxRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +55,7 @@ export default function GeneratePage() {
       const res = await apiFetch(`/api/exams/${exam.id}/generate`, { method: 'POST' });
       if (!res.ok || !res.body) {
         const json = await res.json().catch(() => null);
-        pushLog(`启动失败：${json?.message ?? res.statusText}`);
+        pushLog(`启动失败：${json?.error ?? json?.message ?? res.statusText}`);
         setRunning(false);
         return;
       }
@@ -65,13 +65,29 @@ export default function GeneratePage() {
 
       const handle = (event: string, data: Record<string, unknown>) => {
         if (event === 'start') {
-          pushLog(`任务启动，计划生成 ${data.total ?? 0} 道题`);
+          pushLog(String(data.message ?? `任务启动，计划生成 ${data.total ?? 0} 道题`));
         } else if (event === 'progress') {
           const type = data.type as QuestionType;
           const generated = Number(data.generated ?? 0);
-          const detail = String(data.detail ?? '');
+          const detail = String(data.detail ?? data.message ?? '');
+          const typeLabel = QUESTION_TYPE_LABELS[type];
+          if (!typeLabel) {
+            if (detail) pushLog(detail);
+            return;
+          }
           setItems((prev) => prev.map((it) => it.type === type ? { ...it, status: 'generating', generated, detail } : it));
-          if (detail) pushLog(`[${QUESTION_TYPE_LABELS[type as QuestionType]}] ${detail}（${generated} 题）`);
+          if (detail) pushLog(`[${typeLabel}] ${detail}（已完成 ${generated} 题）`);
+        } else if (event === 'batch_error') {
+          const type = data.type as QuestionType;
+          const retrying = data.retrying !== false;
+          const message = String(data.message ?? `${QUESTION_TYPE_LABELS[type]}生成失败`);
+          setItems((prev) => prev.map((it) => it.type === type ? {
+            ...it,
+            status: retrying ? 'generating' : 'error',
+            generated: Number(data.generated ?? it.generated),
+            detail: retrying ? '本轮失败，正在自动补题…' : message,
+          } : it));
+          pushLog(message);
         } else if (event === 'type_done') {
           const type = data.type as string;
           const count = Number(data.count ?? 0);
@@ -80,8 +96,15 @@ export default function GeneratePage() {
         } else if (event === 'done') {
           const generated = Number(data.generated ?? 0);
           const errors = (data.errors as string[]) ?? [];
-          setResult({ generated, errors });
-          pushLog(`任务结束：成功生成 ${generated} 题${errors.length > 0 ? `，${errors.length} 个题型存在问题` : ''}`);
+          const success = data.success !== false && errors.length === 0;
+          const message = String(data.message ?? `任务结束，共生成 ${generated} 题`);
+          setResult({ generated, errors, message, success });
+          setItems((prev) => prev.map((item) => ({
+            ...item,
+            status: item.generated >= item.total ? 'done' : 'error',
+            detail: item.generated >= item.total ? '生成完成' : `仍缺 ${item.total - item.generated} 题`,
+          })));
+          pushLog(message);
         }
       };
 
@@ -99,9 +122,12 @@ export default function GeneratePage() {
             if (line.startsWith('event:')) event = line.slice(6).trim();
             else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
           }
-          if (event && dataStr) {
+          if (dataStr) {
             try {
-              handle(event, JSON.parse(dataStr));
+              const data = JSON.parse(dataStr) as Record<string, unknown>;
+              // 兼容旧版仅在 data.type 中携带事件名的 SSE 数据。
+              const eventName = event || (typeof data.type === 'string' ? data.type : '');
+              if (eventName && eventName !== 'heartbeat') handle(eventName, data);
             } catch {
               // 忽略解析失败的片段
             }
@@ -127,12 +153,33 @@ export default function GeneratePage() {
   }, [exam.id]);
 
   const allDone = result !== null;
+  const progress = useMemo(() => {
+    const generated = items.reduce((sum, item) => sum + item.generated, 0);
+    const total = items.reduce((sum, item) => sum + item.total, 0);
+    return { generated, total, percent: total > 0 ? Math.min(100, (generated / total) * 100) : 0 };
+  }, [items]);
 
   return (
     <div className="max-w-4xl grid lg:grid-cols-5 gap-5">
       <Card className="lg:col-span-2">
         <CardHeader className="pb-3"><CardTitle className="text-base">出题进度</CardTitle></CardHeader>
         <CardContent className="space-y-3">
+          <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {running
+              ? `正在生成试题，已完成 ${progress.generated} 道，共 ${progress.total} 道`
+              : result?.message ?? '智能出题尚未开始'}
+          </div>
+          {items.length > 0 && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">总体进度</span>
+                <span className="font-display font-semibold tabular-nums text-primary">{progress.generated} / {progress.total}</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-violet-400 transition-[width] duration-500" style={{ width: `${progress.percent}%` }} />
+              </div>
+            </div>
+          )}
           {items.length === 0 && !running && (
             <p className="text-sm text-muted-foreground">点击下方按钮开始智能出题</p>
           )}
@@ -169,8 +216,8 @@ export default function GeneratePage() {
           ))}
 
           {allDone && (
-            <div className={`rounded-lg p-3.5 text-sm ${result.errors.length > 0 ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'}`}>
-              <p className="font-medium">共生成 {result.generated} 道题</p>
+            <div className={`rounded-lg p-3.5 text-sm ${!result.success ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'}`}>
+              <p className="font-medium">{result.message}</p>
               {result.errors.map((err, i) => (
                 <p key={i} className="text-xs mt-1">{err}</p>
               ))}
