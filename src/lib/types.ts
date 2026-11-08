@@ -7,6 +7,12 @@ export type ExamStatus = 'draft' | 'pending' | 'published' | 'ongoing' | 'ended'
 /** 组卷模式：fixed=固定试卷（全员同卷，需管理员确认后发布）；random=随机试卷（题库抽题，考生开始时生成） */
 export type PaperMode = 'fixed' | 'random';
 
+/** 随机试卷按卷面配置生成题库的倍率。 */
+export const RANDOM_PAPER_POOL_MULTIPLIER = 3;
+
+/** 智能出题允许的单个题型最小题量，不对多选题设置额外门槛。 */
+export const MIN_QUESTION_COUNT_PER_TYPE = 1;
+
 export type ResultVisibility = 'immediate' | 'after_end' | 'manual';
 
 export type ParseStatus = 'pending' | 'parsing' | 'success' | 'failed';

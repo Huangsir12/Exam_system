@@ -6,6 +6,7 @@ import { fail, ok, withErrorHandling } from '@/lib/api';
 import {
   EXAM_STATUS,
   GENERATION_STATUS,
+  MIN_QUESTION_COUNT_PER_TYPE,
   QUESTION_TYPES,
   type QuestionConfigItem,
   type QuestionType,
@@ -93,7 +94,9 @@ export const POST = withErrorHandling(async (request: Request): Promise<NextResp
     if (!QUESTION_TYPES.includes(t.type)) return fail(`不支持的题型: ${t.type}`);
     const count = Math.floor(Number(t.count));
     const score = Number(t.score);
-    if (!count || count <= 0 || count > 100) return fail('题型题量必须在 1~100 之间');
+    if (!count || count < MIN_QUESTION_COUNT_PER_TYPE || count > 100) {
+      return fail(`题型题量必须在 ${MIN_QUESTION_COUNT_PER_TYPE}~100 之间`);
+    }
     if (!score || score <= 0 || score > 100) return fail('题型分值必须在 0~100 之间');
     totalScore += count * score;
     const diff = t.difficulty ?? { easy: 0, medium: count, hard: 0 };

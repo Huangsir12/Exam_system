@@ -7,7 +7,7 @@
 - **两类角色**：管理员（账号密码登录，分超级 `super`/普通 `normal` 两级，仅超管可管理管理员账号）、考生（姓名 + 手机号登录，无需验证码；名单外用户可登录但看不到任何考试，考试详情/开考由服务端名单校验拦截 403）
 - **会话隔离**：管理员与考生独立会话，同一浏览器双角色并存互不顶号；`/api/auth/me` 返回 `{admin, candidate}` 双角色状态
 - **双通道认证**：主通道为 localStorage token + 请求头（`x-admin-token` / `x-candidate-token`，由 `src/lib/client-fetch.ts` 的 `apiFetch` 自动携带，免疫 iframe/第三方 cookie 拦截）；备通道为 cookie（`exam_admin_session` / `exam_candidate_session`，HTTPS 下 `SameSite=None; Secure`，见 `sessionCookieOptions`）。服务端 `getSession(role)` 优先读请求头、回退 cookie。前端页面一律用 `apiFetch` 调 `/api/*`
-- **两种组卷模式**：固定试卷 `fixed`（全员同卷，生成后需管理员确认 `confirmed_at` 才能发布，题目变更自动重置确认）/ 随机试卷 `random`（按配置 2 倍生成题库，考生 start 时随机抽题 + 题序选项乱序）；历史值 uniform/shuffle→fixed、random_equal→random，读取侧用 `normalizePaperMode` 兼容
+- **两种组卷模式**：固定试卷 `fixed`（全员同卷，生成后需管理员确认 `confirmed_at` 才能发布，题目变更自动重置确认）/ 随机试卷 `random`（按配置 3 倍生成题库，考生 start 时随机抽题 + 题序选项乱序）；历史值 uniform/shuffle→fixed、random_equal→random，读取侧用 `normalizePaperMode` 兼容
 - **五种题型**：单选 single / 多选 multiple / 判断 judge / 填空 fill / 简答 essay
 
 ### 版本技术栈

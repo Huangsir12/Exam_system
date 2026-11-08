@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { QUESTION_TYPE_LABELS, type KnowledgeDocument, type QuestionType } from '@/lib/types';
+import { MIN_QUESTION_COUNT_PER_TYPE, QUESTION_TYPE_LABELS, RANDOM_PAPER_POOL_MULTIPLIER, type KnowledgeDocument, type QuestionType } from '@/lib/types';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 const QUESTION_TYPES: QuestionType[] = ['single', 'multiple', 'judge', 'fill', 'essay'];
@@ -249,7 +249,7 @@ export default function NewExamPage() {
                     <>
                       <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         题量
-                        <Input type="number" min={1} max={100} className="w-20 h-8" value={cfg.count} onChange={(e) => updateType(type, { count: Number(e.target.value) })} />
+                        <Input type="number" min={MIN_QUESTION_COUNT_PER_TYPE} max={100} className="w-20 h-8" value={cfg.count} onChange={(e) => updateType(type, { count: Number(e.target.value) })} />
                       </span>
                       <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         每题
@@ -299,7 +299,7 @@ export default function NewExamPage() {
           </RadioGroup>
           {paperMode === 'random' && (
             <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2 mt-3">
-              随机试卷将按题型配置题量的 2 倍生成题库；考生开考时从中随机抽题，题目与选项顺序自动打乱。
+              随机试卷将按题型配置题量的 {RANDOM_PAPER_POOL_MULTIPLIER} 倍生成题库；考生开考时从中随机抽题，题目与选项顺序自动打乱。
             </p>
           )}
         </CardContent>

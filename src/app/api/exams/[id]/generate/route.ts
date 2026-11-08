@@ -4,7 +4,7 @@ import { requireAdmin, writeLog } from '@/lib/auth';
 import type { Difficulty, KnowledgeDocument, QuestionType } from '@/lib/types';
 import { dedupeQuestions, generateQuestionBatch, isSimilarToAny, QUESTION_TYPE_LABEL } from '@/lib/generator';
 import { splitIntoChunks } from '@/lib/docparse';
-import { normalizePaperMode } from '@/lib/types';
+import { MIN_QUESTION_COUNT_PER_TYPE, normalizePaperMode, RANDOM_PAPER_POOL_MULTIPLIER } from '@/lib/types';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -38,10 +38,17 @@ export async function POST(request: Request, ctx: Ctx): Promise<Response> {
   const documentIds = (exam.document_ids as string[]) ?? [];
   const contentScope = (exam.content_scope as { docId: string; chapters: string[] }[] | null) ?? [];
   const rawConfig = (exam.question_config as { type: QuestionType; count: number; score: number; difficulty: { easy: number; medium: number; hard: number } }[]) ?? [];
-  // 随机试卷：题库题量按配置的 2 倍生成（至少多 2 题），保证考生抽题有足够随机性
+  if (rawConfig.length === 0 || rawConfig.some((config) => config.count < MIN_QUESTION_COUNT_PER_TYPE)) {
+    return new Response(
+      JSON.stringify({ error: `每个启用题型至少配置 ${MIN_QUESTION_COUNT_PER_TYPE} 道题，多选题没有额外题量门槛` }),
+      { status: 400 },
+    );
+  }
+
+  // 随机试卷：题库题量按配置的 3 倍生成，保证考生抽题有足够随机性
   const isRandomMode = normalizePaperMode(exam.paper_mode as string) === 'random';
   const questionConfig = rawConfig.map((c) =>
-    isRandomMode ? { ...c, count: Math.max(c.count * 2, c.count + 2) } : c,
+    isRandomMode ? { ...c, count: c.count * RANDOM_PAPER_POOL_MULTIPLIER } : c,
   );
 
   const { data: docs, error: dErr } = await client.from('documents').select('*').in('id', documentIds);

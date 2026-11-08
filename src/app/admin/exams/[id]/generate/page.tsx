@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { normalizePaperMode, QUESTION_TYPE_LABELS, type QuestionType } from '@/lib/types';
+import { normalizePaperMode, QUESTION_TYPE_LABELS, RANDOM_PAPER_POOL_MULTIPLIER, type QuestionType } from '@/lib/types';
 import { CheckCircle2, Loader2, Sparkles, XCircle } from 'lucide-react';
 
 interface ProgressItem {
@@ -47,8 +47,8 @@ export default function GeneratePage() {
     setLogs([]);
     const config = exam.question_config ?? [];
     const isRandom = normalizePaperMode(exam.paper_mode) === 'random';
-    // 与后端一致：随机试卷按配置 2 倍生成题库
-    setItems(config.map((c) => ({ type: c.type, status: 'pending', generated: 0, total: isRandom ? Math.max(c.count * 2, c.count + 2) : c.count })));
+    // 与后端一致：随机试卷按配置 3 倍生成题库
+    setItems(config.map((c) => ({ type: c.type, status: 'pending', generated: 0, total: isRandom ? c.count * RANDOM_PAPER_POOL_MULTIPLIER : c.count })));
     pushLog('开始智能出题任务…');
 
     try {
@@ -138,7 +138,7 @@ export default function GeneratePage() {
           )}
           {normalizePaperMode(exam.paper_mode) === 'random' && (
             <p className="text-xs rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 px-3 py-2">
-              随机试卷模式：系统将按配置题量的 2 倍生成题库，考生开始考试时随机抽题组卷
+              随机试卷模式：系统将按配置题量的 {RANDOM_PAPER_POOL_MULTIPLIER} 倍生成题库，考生开始考试时随机抽题组卷
             </p>
           )}
           {items.map((item) => (
