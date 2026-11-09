@@ -83,10 +83,10 @@ ${avoidance}
 2. 题干表述清晰、无歧义，不得出现无答案、多答案（多选题除外）或答案与材料冲突的情况
 3. 各题考查点不得重复，尽量覆盖不同材料与不同段落
 ${typeSpec}
-- analysis 为解析：说明答案依据与理由，50~200 字
+- analysis 为解析：简要说明答案依据与理由，30~120 字
 - knowledge_point 为该题考查的知识点名称（10 字以内）
 - source_location 为来源定位，格式：《文档名》章节「章节标题」
-- source_excerpt 为支持该题答案的材料原文摘录（从上述材料中原文复制，80 字以内）
+- source_excerpt 为支持该题答案的材料原文摘录（从上述材料中原文复制，60 字以内）
 
 【输出格式】
 只输出一个 JSON 数组，不要输出任何其他文字、解释或 markdown 代码块标记。数组元素格式：
@@ -138,8 +138,15 @@ export function sanitizeQuestion(raw: unknown, type: QuestionType, score: number
         parsed.push({ key: m ? m[1].toUpperCase() : KEYS[i] ?? `O${i}`, text: (m ? m[2] : item).trim() });
       } else if (typeof item === 'object') {
         const o = item as Record<string, unknown>;
-        if (typeof o.key === 'string' && typeof o.text === 'string') {
-          parsed.push({ key: o.key.trim().toUpperCase(), text: o.text.trim() });
+        const optionText = typeof o.text === 'string'
+          ? o.text
+          : typeof o.value === 'string'
+            ? o.value
+            : typeof o.label === 'string'
+              ? o.label
+              : null;
+        if (typeof o.key === 'string' && optionText) {
+          parsed.push({ key: o.key.trim().toUpperCase(), text: optionText.trim() });
         } else {
           // 兼容 {"A": "xxx"} 形式
           const entries = Object.entries(o);
@@ -301,6 +308,7 @@ export async function generateQuestionBatch(
   difficulty: Difficulty | 'mixed',
   chunks: Chunk[],
   avoidContents: string[] = [],
+  maxAttempts = 3,
 ): Promise<GeneratedQuestion[]> {
   const client = new LLMClient(new Config());
   const prompt = buildPrompt(type, count, score, difficulty, chunks, avoidContents);
@@ -310,7 +318,7 @@ export async function generateQuestionBatch(
   ];
 
   let lastError: Error | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       const response = await client.invoke(messages, { model: 'doubao-seed-2-0-pro-260215', temperature: 0.4 });
       const arr = extractJsonArray(response.content);

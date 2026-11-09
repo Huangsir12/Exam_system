@@ -2,7 +2,7 @@
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { requireAdmin, writeLog } from '@/lib/auth';
 import type { Difficulty, KnowledgeDocument, QuestionType } from '@/lib/types';
-import { dedupeQuestions, generateQuestionBatch, isSimilarToAny, QUESTION_TYPE_LABEL } from '@/lib/generator';
+import { dedupeQuestions, generateQuestionBatch, isSimilarToAny, QUESTION_TYPE_LABEL, type GeneratedQuestion } from '@/lib/generator';
 import { splitIntoChunks } from '@/lib/docparse';
 import { MIN_QUESTION_COUNT_PER_TYPE, normalizePaperMode, RANDOM_PAPER_POOL_MULTIPLIER } from '@/lib/types';
 
@@ -169,108 +169,126 @@ export async function POST(request: Request, ctx: Ctx): Promise<Response> {
         for (let taskIndex = 0; taskIndex < tasks.length; taskIndex += 1) {
           const task = tasks[taskIndex];
           const type = task.type;
-          const batchSize = 6; // 每批最多 6 题，控制单次生成稳定性
+          const batchSize = 6;
+          const concurrency = 3;
           let remaining = task.count;
-          let round = 0;
-          let consecutiveEmptyRounds = 0;
-          const maxRounds = Math.max(6, Math.ceil(task.count / batchSize) + 5);
+          let wave = 0;
+          let consecutiveEmptyWaves = 0;
+          const maxWaves = Math.max(4, Math.ceil(task.count / (batchSize * concurrency)) + 3);
 
-          // 以实际成功入库数扣减 remaining；少返回、去重或插入失败都会触发补题。
-          while (remaining > 0 && round < maxRounds && consecutiveEmptyRounds < 3) {
-            round += 1;
-            // 小批次适度超额请求，为格式清洗和相似题去重预留余量。
-            const requestCount = Math.min(batchSize, Math.max(remaining, Math.ceil(remaining * 1.5)));
-            // 每轮偏移采样材料，降低补题与已生成题目重复的概率。
-            const sampled: { title: string; text: string; docName: string }[] = [];
-            for (let i = 0; i < Math.min(allChunks.length, 6); i++) {
-              const c = allChunks[(taskIndex * 5 + round * 3 + i) % allChunks.length];
-              sampled.push({ title: c.title, text: c.text.slice(0, 2200), docName: c.docName });
-            }
+          // 按章节分片并发生成：每个调用只携带 1~2 个章节，降低输入 token，并减少跨章节重复。
+          while (remaining > 0 && wave < maxWaves && consecutiveEmptyWaves < 2) {
+            wave += 1;
+            const parallelCount = Math.min(concurrency, Math.max(1, Math.ceil(remaining / batchSize)));
+            const perCallTarget = Math.ceil(remaining / parallelCount);
+            const requestCount = Math.min(batchSize, Math.max(2, Math.ceil(perCallTarget * 1.25)));
 
             send('progress', {
               type,
               generated: generatedByType[type] ?? 0,
-              detail: `第 ${round} 轮生成中，本轮请求 ${requestCount} 题，尚缺 ${remaining} 题`,
+              detail: `第 ${wave} 轮并行生成 ${parallelCount} 个章节批次，每批约 ${requestCount} 题，尚缺 ${remaining} 题`,
               current: generated,
               total: totalPlanned,
             });
 
-            try {
-              const rawQuestions = await generateQuestionBatch(
-                type,
-                requestCount,
-                task.score,
-                task.difficulty,
-                sampled,
-                existingContents,
-              );
-              // 批内去重 + 与已入库题目跨批去重
-              const questions = dedupeQuestions(rawQuestions).filter((q) => !isSimilarToAny(q.content, existingContents));
-              const discarded = rawQuestions.length - questions.length;
-              let insertedThisRound = 0;
-              let insertFailures = 0;
-
-              for (const q of questions) {
-                if (insertedThisRound >= remaining) break;
-                // 依据 source_location 关联文档
-                const matchedDoc = parsedDocs.find((d) => q.source_location.includes(d.name.replace(/\.[^.]+$/, '')))
-                  ?? parsedDocs.find((d) => sampled.some((s) => s.docName === d.name))
-                  ?? parsedDocs[0];
-                const nextSortOrder = sortOrder + 1;
-                const { error: insErr } = await client.from('questions').insert({
-                  exam_id: id,
-                  type: q.type,
-                  content: q.content,
-                  options: q.options,
-                  answer: q.answer,
-                  analysis: q.analysis,
-                  score: task.score,
-                  difficulty: q.difficulty,
-                  knowledge_point: q.knowledge_point,
-                  source_document_id: matchedDoc.id,
-                  source_document_name: matchedDoc.name,
-                  source_location: q.source_location,
-                  source_excerpt: q.source_excerpt,
-                  sort_order: nextSortOrder,
-                });
-                if (!insErr) {
-                  sortOrder = nextSortOrder;
-                  generated += 1;
-                  insertedThisRound += 1;
-                  generatedByType[type] = (generatedByType[type] ?? 0) + 1;
-                  existingContents.push(q.content);
-                  docRefCount[matchedDoc.id] = (docRefCount[matchedDoc.id] ?? 0) + 1;
-                } else {
-                  insertFailures += 1;
-                }
-              }
-
-              remaining -= insertedThisRound;
-              consecutiveEmptyRounds = insertedThisRound > 0 ? 0 : consecutiveEmptyRounds + 1;
-              const notes = [
-                `本轮成功入库 ${insertedThisRound} 题`,
-                discarded > 0 ? `去重淘汰 ${discarded} 题` : '',
-                insertFailures > 0 ? `写入失败 ${insertFailures} 题` : '',
-                remaining > 0 ? `继续补充 ${remaining} 题` : '该批次已补齐',
-              ].filter(Boolean).join('，');
-              send('progress', {
-                type,
-                generated: generatedByType[type] ?? 0,
-                detail: notes,
-                current: generated,
-                total: totalPlanned,
+            const calls = Array.from({ length: parallelCount }, (_, callIndex) => {
+              const primaryIndex = (taskIndex * 11 + wave * concurrency + callIndex) % allChunks.length;
+              const secondaryIndex = (primaryIndex + Math.max(1, Math.floor(allChunks.length / 2))) % allChunks.length;
+              const chunkIndexes = primaryIndex === secondaryIndex ? [primaryIndex] : [primaryIndex, secondaryIndex];
+              const sampled = chunkIndexes.map((chunkIndex, index) => {
+                const chunk = allChunks[chunkIndex];
+                return {
+                  title: chunk.title,
+                  text: chunk.text.slice(0, index === 0 ? 2600 : 1800),
+                  docName: chunk.docName,
+                };
               });
-            } catch (e) {
-              const message = e instanceof Error ? e.message : '生成失败';
-              consecutiveEmptyRounds += 1;
-              const retrying = round < maxRounds && consecutiveEmptyRounds < 3;
+              // 单个章节批次不做原样重试；失败后由下一轮切换章节补缺，避免重复消耗 token。
+              return generateQuestionBatch(type, requestCount, task.score, task.difficulty, sampled, existingContents, 1)
+                .then((questions) => ({ questions, sampled }));
+            });
+
+            const callResults = await Promise.allSettled(calls);
+            const candidates: { question: GeneratedQuestion; sampled: { title: string; text: string; docName: string }[] }[] = [];
+            const waveContents: string[] = [];
+            const callErrors: string[] = [];
+            let rawCount = 0;
+
+            for (const callResult of callResults) {
+              if (callResult.status === 'rejected') {
+                callErrors.push(callResult.reason instanceof Error ? callResult.reason.message : '章节批次生成失败');
+                continue;
+              }
+              rawCount += callResult.value.questions.length;
+              for (const question of dedupeQuestions(callResult.value.questions)) {
+                if (isSimilarToAny(question.content, existingContents) || isSimilarToAny(question.content, waveContents)) continue;
+                candidates.push({ question, sampled: callResult.value.sampled });
+                waveContents.push(question.content);
+              }
+            }
+
+            if (callErrors.length > 0) {
+              const retrying = wave < maxWaves;
               send('batch_error', {
                 type,
                 generated: generatedByType[type] ?? 0,
-                message: `${QUESTION_TYPE_LABEL[type]}第 ${round} 轮失败：${message}${retrying ? '；将自动重试补题' : ''}`,
+                message: `${QUESTION_TYPE_LABEL[type]}本轮有 ${callErrors.length}/${parallelCount} 个章节批次失败${retrying ? '，缺口将自动补齐' : ''}`,
                 retrying,
               });
             }
+
+            let insertedThisWave = 0;
+            let insertFailures = 0;
+            for (const { question, sampled } of candidates) {
+              if (insertedThisWave >= remaining) break;
+              const matchedDoc = parsedDocs.find((doc) => question.source_location.includes(doc.name.replace(/\.[^.]+$/, '')))
+                ?? parsedDocs.find((doc) => sampled.some((material) => material.docName === doc.name))
+                ?? parsedDocs[0];
+              const nextSortOrder = sortOrder + 1;
+              const { error: insertError } = await client.from('questions').insert({
+                exam_id: id,
+                type: question.type,
+                content: question.content,
+                options: question.options,
+                answer: question.answer,
+                analysis: question.analysis,
+                score: task.score,
+                difficulty: question.difficulty,
+                knowledge_point: question.knowledge_point,
+                source_document_id: matchedDoc.id,
+                source_document_name: matchedDoc.name,
+                source_location: question.source_location,
+                source_excerpt: question.source_excerpt,
+                sort_order: nextSortOrder,
+              });
+              if (insertError) {
+                insertFailures += 1;
+                continue;
+              }
+              sortOrder = nextSortOrder;
+              generated += 1;
+              insertedThisWave += 1;
+              generatedByType[type] = (generatedByType[type] ?? 0) + 1;
+              existingContents.push(question.content);
+              docRefCount[matchedDoc.id] = (docRefCount[matchedDoc.id] ?? 0) + 1;
+            }
+
+            remaining -= insertedThisWave;
+            consecutiveEmptyWaves = insertedThisWave > 0 ? 0 : consecutiveEmptyWaves + 1;
+            const discarded = Math.max(0, rawCount - candidates.length);
+            const notes = [
+              `本轮并发完成，成功入库 ${insertedThisWave} 题`,
+              discarded > 0 ? `合并去重 ${discarded} 题` : '',
+              insertFailures > 0 ? `写入失败 ${insertFailures} 题` : '',
+              remaining > 0 ? `继续补充 ${remaining} 题` : '该批次已补齐',
+            ].filter(Boolean).join('，');
+            send('progress', {
+              type,
+              generated: generatedByType[type] ?? 0,
+              detail: notes,
+              current: generated,
+              total: totalPlanned,
+            });
           }
 
           if (remaining > 0) shortage.push(`${QUESTION_TYPE_LABEL[type]}缺少 ${remaining} 题`);
