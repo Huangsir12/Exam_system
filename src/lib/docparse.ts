@@ -1,6 +1,50 @@
 // 知识文档：解析工具（章节切分）
 import type { DocumentChapter } from '@/lib/types';
 
+const TOC_TITLE_RE = /^(?:目录|目次|contents?|table\s+of\s+contents)$/i;
+const TOC_LINE_RE = /(?:\.{3,}|…{2,}|·{3,}|-{3,}|_{3,})\s*\d*\s*$|^.{1,80}\s+\d{1,4}\s*$/;
+
+function stripHeadingLine(body: string, title: string): string {
+  const lines = body.split('\n');
+  if (lines.length === 0) return '';
+  const first = lines[0].replace(/^#{1,6}\s*/, '').trim();
+  const normalizedTitle = title.replace(/^#{1,6}\s*/, '').trim();
+  if (first === normalizedTitle) {
+    return lines.slice(1).join('\n').trim();
+  }
+  return body.trim();
+}
+
+/** 识别目录页、纯标题等不包含可命题知识的文本。 */
+function isNonBodyText(text: string, title = ''): boolean {
+  if (TOC_TITLE_RE.test(title.trim())) return true;
+  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length === 0) return true;
+  const usefulLength = lines.join('').replace(/[\s\p{P}\p{S}]/gu, '').length;
+  const tocLines = lines.filter((line) => TOC_TITLE_RE.test(line) || TOC_LINE_RE.test(line)).length;
+  if (tocLines >= 2 && tocLines / lines.length >= 0.5) return true;
+  // 保留简短但有效的正文条款，只排除明确带页码/引导符的短目录行。
+  return usefulLength < 24
+    && lines.length <= 2
+    && lines.every((line) => TOC_TITLE_RE.test(line) || TOC_LINE_RE.test(line));
+}
+
+function stripLeadingTableOfContents(text: string): string {
+  const lines = text.split('\n');
+  const searchLimit = Math.min(lines.length, 120);
+  const tocIndex = lines.slice(0, searchLimit).findIndex((line) => TOC_TITLE_RE.test(line.trim()));
+  if (tocIndex < 0) return text;
+  for (let i = tocIndex + 1; i < lines.length; i += 1) {
+    const line = lines[i].trim();
+    const compactLength = line.replace(/[\s\p{P}\p{S}]/gu, '').length;
+    // 正文的第一个完整句子比页码型目录条目更可靠。
+    if (compactLength >= 24 && /[。；：，]/.test(line) && !TOC_LINE_RE.test(line)) {
+      return lines.slice(i).join('\n').trim();
+    }
+  }
+  return text;
+}
+
 /** 从解析后的纯文本中识别章节结构 */
 export function extractChapters(text: string): DocumentChapter[] {
   const lines = text.split('\n');
@@ -57,20 +101,27 @@ export function splitIntoChunks(text: string, chapters: DocumentChapter[] | null
   const chunks: { title: string; text: string }[] = [];
   if (chapters && chapters.length > 0) {
     for (const ch of chapters) {
-      const body = text.slice(ch.start, ch.end).trim();
-      if (!body) continue;
+      const rawBody = text.slice(ch.start, ch.end).trim();
+      const body = stripHeadingLine(rawBody, ch.title);
+      if (isNonBodyText(body, ch.title)) continue;
       if (body.length <= maxChunkLen) {
         chunks.push({ title: ch.title, text: body });
       } else {
         for (let i = 0; i < body.length; i += maxChunkLen) {
-          chunks.push({ title: ch.title, text: body.slice(i, i + maxChunkLen) });
+          const part = body.slice(i, i + maxChunkLen).trim();
+          if (!isNonBodyText(part, ch.title)) chunks.push({ title: ch.title, text: part });
         }
       }
     }
+    // 已有章节结构时不回退到全文，否则会把刚过滤的目录重新送给模型。
     return chunks;
   }
-  for (let i = 0; i < text.length; i += maxChunkLen) {
-    chunks.push({ title: `片段 ${Math.floor(i / maxChunkLen) + 1}`, text: text.slice(i, i + maxChunkLen) });
+  const bodyText = stripLeadingTableOfContents(text);
+  for (let i = 0; i < bodyText.length; i += maxChunkLen) {
+    const part = bodyText.slice(i, i + maxChunkLen).trim();
+    if (!isNonBodyText(part)) {
+      chunks.push({ title: `片段 ${Math.floor(i / maxChunkLen) + 1}`, text: part });
+    }
   }
   return chunks;
 }

@@ -80,8 +80,9 @@ ${avoidance}
 
 【命题要求】
 1. 题目必须且只能依据上述材料命制，答案必须能从材料中找到依据，禁止引入材料之外的知识
-2. 题干表述清晰、无歧义，不得出现无答案、多答案（多选题除外）或答案与材料冲突的情况
-3. 各题考查点不得重复，尽量覆盖不同材料与不同段落
+2. 只能考查正文中的制度、规则、流程、概念、条件或数据；严禁根据目录、章节名称、章节数量、顺序或页码命题
+3. 题干表述清晰、无歧义，不得出现无答案、多答案（多选题除外）或答案与材料冲突的情况
+4. 各题考查点不得重复，尽量覆盖不同材料与不同段落
 ${typeSpec}
 - analysis 为解析：简要说明答案依据与理由，30~120 字
 - knowledge_point 为该题考查的知识点名称（10 字以内）
@@ -111,12 +112,22 @@ function extractJsonArray(text: string): unknown[] {
 }
 
 const VALID_DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
+const DIRECTORY_QUESTION_PATTERNS = [
+  /(?:目录|目次).{0,20}(?:包含|包括|列出|顺序|排序|页码|共有|多少)/,
+  /(?:第[一二三四五六七八九十百\d]+[章节篇部分]|章节|小节).{0,24}(?:包含|包括|下设|分为|有哪些|数量|顺序|标题|名称)/,
+  /(?:下列|以下).{0,10}(?:属于|位于).{0,24}(?:章节|小节|第[一二三四五六七八九十百\d]+[章节篇部分])/,
+];
+
+function isDirectoryBasedQuestion(content: string): boolean {
+  const compact = content.replace(/\s+/g, '');
+  return DIRECTORY_QUESTION_PATTERNS.some((pattern) => pattern.test(compact));
+}
 
 export function sanitizeQuestion(raw: unknown, type: QuestionType, score: number): GeneratedQuestion | null {
   if (!raw || typeof raw !== 'object') return null;
   const q = raw as Record<string, unknown>;
   const content = typeof q.content === 'string' ? q.content.trim() : '';
-  if (!content) return null;
+  if (!content || isDirectoryBasedQuestion(content)) return null;
 
   let options: { key: string; text: string }[] | null = null;
   if (type === 'single' || type === 'multiple') {
@@ -251,41 +262,81 @@ export function sanitizeQuestion(raw: unknown, type: QuestionType, score: number
   };
 }
 
-/** 文本相似度（基于字符 bigram 的 Dice 系数），用于题目去重 */
-function similarity(a: string, b: string): number {
-  const norm = (s: string) => s.replace(/[\s\p{P}\p{S}]/gu, '');
-  const x = norm(a);
-  const y = norm(b);
-  if (!x || !y) return 0;
-  if (x === y) return 1;
-  if (x.includes(y) || y.includes(x)) return Math.min(x.length, y.length) / Math.max(x.length, y.length);
-  const grams = (s: string): Map<string, number> => {
-    const m = new Map<string, number>();
-    for (let i = 0; i < s.length - 1; i++) {
-      const g = s.slice(i, i + 2);
-      m.set(g, (m.get(g) ?? 0) + 1);
-    }
-    return m;
-  };
-  const ga = grams(x);
-  const gb = grams(y);
-  let overlap = 0;
-  for (const [g, c] of ga) overlap += Math.min(c, gb.get(g) ?? 0);
-  return (2 * overlap) / (x.length - 1 + (y.length - 1));
+function normalizeQuestionText(text: string): string {
+  const normalized = text.normalize('NFKC').toLowerCase();
+  const withoutBoilerplate = normalized
+    .replace(/(?:根据|依据|按照)(?:上述|以上|文中|材料|《[^\u300b]{1,40}》)?/g, '')
+    .replace(/(?:下列|以下)(?:关于)?/g, '')
+    .replace(/(?:说法|表述|选项)(?:中)?/g, '')
+    .replace(/(?:正确|错误|不正确|不错误|符合|不符合)(?:的)?是/g, '')
+    .replace(/(?:是|为)(?:哪一项|哪些|什么)/g, '');
+  const compact = withoutBoilerplate.replace(/[\s\p{P}\p{S}]/gu, '');
+  return compact.length >= 6 ? compact : normalized.replace(/[\s\p{P}\p{S}]/gu, '');
 }
 
-/** 去除重复/高度相似题目（相似度阈值 0.65），保留先出现者 */
+function ngrams(text: string, size: number): Map<string, number> {
+  const result = new Map<string, number>();
+  if (text.length < size) {
+    if (text) result.set(text, 1);
+    return result;
+  }
+  for (let i = 0; i <= text.length - size; i += 1) {
+    const gram = text.slice(i, i + size);
+    result.set(gram, (result.get(gram) ?? 0) + 1);
+  }
+  return result;
+}
+
+function diceCoefficient(a: Map<string, number>, b: Map<string, number>): number {
+  const countA = [...a.values()].reduce((sum, count) => sum + count, 0);
+  const countB = [...b.values()].reduce((sum, count) => sum + count, 0);
+  if (countA === 0 || countB === 0) return 0;
+  let overlap = 0;
+  for (const [gram, count] of a) overlap += Math.min(count, b.get(gram) ?? 0);
+  return (2 * overlap) / (countA + countB);
+}
+
+function jaccardCoefficient(a: Map<string, number>, b: Map<string, number>): number {
+  const keys = new Set([...a.keys(), ...b.keys()]);
+  if (keys.size === 0) return 0;
+  let intersection = 0;
+  for (const key of a.keys()) {
+    if (b.has(key)) intersection += 1;
+  }
+  return intersection / keys.size;
+}
+
+/** 题干相似度：去掉常见命题模板后，结合局部语序和无序特征识别改写重复题。 */
+function similarity(a: string, b: string): number {
+  const x = normalizeQuestionText(a);
+  const y = normalizeQuestionText(b);
+  if (!x || !y) return 0;
+  if (x === y) return 1;
+  const lengthRatio = Math.min(x.length, y.length) / Math.max(x.length, y.length);
+  if ((x.includes(y) || y.includes(x)) && lengthRatio >= 0.55) {
+    return 0.7 + lengthRatio * 0.3;
+  }
+
+  const x2 = ngrams(x, 2);
+  const y2 = ngrams(y, 2);
+  const localOrderScore = diceCoefficient(x2, y2);
+  const longerPhraseScore = diceCoefficient(ngrams(x, 3), ngrams(y, 3));
+  const unorderedScore = jaccardCoefficient(x2, y2);
+  return localOrderScore * 0.5 + longerPhraseScore * 0.25 + unorderedScore * 0.25;
+}
+
+/** 去除重复/高度相似题目，保留先出现者。 */
 export function dedupeQuestions(questions: GeneratedQuestion[]): GeneratedQuestion[] {
   const kept: GeneratedQuestion[] = [];
   for (const q of questions) {
-    if (kept.some((k) => similarity(k.content, q.content) >= 0.65)) continue;
+    if (kept.some((k) => similarity(k.content, q.content) >= 0.62)) continue;
     kept.push(q);
   }
   return kept;
 }
 
 /** 判断题干是否与已有题目列表中的任一条高度相似 */
-export function isSimilarToAny(content: string, existing: string[], threshold = 0.65): boolean {
+export function isSimilarToAny(content: string, existing: string[], threshold = 0.62): boolean {
   return existing.some((c) => similarity(c, content) >= threshold);
 }
 
