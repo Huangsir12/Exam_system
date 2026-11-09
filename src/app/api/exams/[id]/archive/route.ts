@@ -14,6 +14,7 @@ export const POST = withErrorHandling(async (_req: Request, ctx: Ctx): Promise<N
   const { data: exam, error: eErr } = await client.from('exams').select('id, title, status').eq('id', id).single();
   if (eErr || !exam) return fail('考试不存在', 404);
   if (exam.status === EXAM_STATUS.ARCHIVED) return fail('考试已归档');
+  if (exam.status !== EXAM_STATUS.ENDED) return fail('仅已结束的考试可以归档，请先停止考试', 409);
 
   const { error } = await client
     .from('exams')

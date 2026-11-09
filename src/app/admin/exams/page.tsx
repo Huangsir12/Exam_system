@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/status-badge';
+import { ExamLifecycleActions } from '@/components/exam-lifecycle-actions';
 import { EXAM_STATUS_LABELS, fmtDateTime, type Exam } from '@/lib/types';
 import { CalendarClock, ClipboardList, Plus } from 'lucide-react';
 
@@ -60,12 +61,11 @@ export default function AdminExamsPage() {
       ) : (
         <div className="grid gap-3">
           {exams.map((exam) => (
-            <Link key={exam.id} href={`/admin/exams/${exam.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <Card key={exam.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <h3 className="font-medium truncate">{exam.title}</h3>
+                      <Link href={`/admin/exams/${exam.id}`} className="font-medium hover:underline focus-visible:outline-ring break-words">{exam.title}</Link>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <CalendarClock className="w-3.5 h-3.5" />
@@ -80,9 +80,14 @@ export default function AdminExamsPage() {
                     </div>
                     <StatusBadge status={exam.status} label={EXAM_STATUS_LABELS[exam.status] ?? exam.status} />
                   </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
+                    <Button asChild variant="secondary" className="min-h-11">
+                      <Link href={`/admin/exams/${exam.id}`}>管理考试</Link>
+                    </Button>
+                    <ExamLifecycleActions exam={exam} onChanged={load} />
+                  </div>
                 </CardContent>
               </Card>
-            </Link>
           ))}
         </div>
       )}

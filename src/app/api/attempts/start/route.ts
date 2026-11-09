@@ -42,6 +42,7 @@ export const POST = withErrorHandling(async (request: Request): Promise<NextResp
   const now = new Date();
   if (exam.status === EXAM_STATUS.DRAFT || exam.status === EXAM_STATUS.PENDING) return fail('考试尚未发布', 403);
   if (exam.status === EXAM_STATUS.ARCHIVED) return fail('考试已归档', 403);
+  if (exam.status === EXAM_STATUS.ENDED) return fail('考试已结束', 403);
   if (exam.start_time && now < new Date(exam.start_time as string)) return fail('考试尚未开始', 403);
   if (exam.end_time && now > new Date(exam.end_time as string)) return fail('考试已结束', 403);
 

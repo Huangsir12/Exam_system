@@ -123,7 +123,7 @@ function TakeExamInner({ params }: { params: Promise<{ id: string }> }) {
       if (json.code === 0) {
         setSaveState('saved');
         if (json.data?.deadline_at) deadlineRef.current = new Date(json.data.deadline_at).getTime();
-      } else if (json.data?.already_submitted) {
+      } else if (json.data?.already_submitted || json.data?.expired) {
         doSubmit();
       } else {
         setSaveState('error');
@@ -177,6 +177,27 @@ function TakeExamInner({ params }: { params: Promise<{ id: string }> }) {
     }, 1000);
     return () => clearInterval(timer);
   }, [data, doSubmit]);
+
+  // 管理员提前停止考试时同步服务端截止时间，不覆盖考生本地尚未保存的答案。
+  useEffect(() => {
+    if (!data || !attemptId) return;
+    let active = true;
+    const syncStatus = async () => {
+      if (submittedRef.current) return;
+      try {
+        const response = await apiFetch(`/api/attempts/${attemptId}?status_only=1`);
+        const json = await response.json() as { code: number; data?: { status: string; deadline_at: string } };
+        if (!active || json.code !== 0 || !json.data) return;
+        const deadline = new Date(json.data.deadline_at).getTime();
+        if (Number.isFinite(deadline)) deadlineRef.current = deadline;
+        if (json.data.status !== 'in_progress' || deadline <= Date.now()) void doSubmit();
+      } catch {
+        // 临时网络异常不打断本地作答，下一轮继续同步。
+      }
+    };
+    const timer = setInterval(() => void syncStatus(), 5000);
+    return () => { active = false; clearInterval(timer); };
+  }, [data, attemptId, doSubmit]);
 
   // 更新答案（带防抖自动保存）
   const updateAnswer = useCallback((qid: string, value: string | string[] | boolean) => {

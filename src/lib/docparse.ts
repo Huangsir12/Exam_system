@@ -9,20 +9,19 @@ function stripHeadingLine(body: string, title: string): string {
   if (lines.length === 0) return '';
   const first = lines[0].replace(/^#{1,6}\s*/, '').trim();
   const normalizedTitle = title.replace(/^#{1,6}\s*/, '').trim();
-  if (first === normalizedTitle) {
+  if (first.replace(/\s/g, '') === normalizedTitle.replace(/\s/g, '') && !/[。；，：]/.test(first)) {
     return lines.slice(1).join('\n').trim();
   }
   return body.trim();
 }
 
 /** 识别目录页、纯标题等不包含可命题知识的文本。 */
-function isNonBodyText(text: string, title = ''): boolean {
-  if (TOC_TITLE_RE.test(title.trim())) return true;
+function isNonBodyText(text: string): boolean {
   const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) return true;
   const usefulLength = lines.join('').replace(/[\s\p{P}\p{S}]/gu, '').length;
   const tocLines = lines.filter((line) => TOC_TITLE_RE.test(line) || TOC_LINE_RE.test(line)).length;
-  if (tocLines >= 2 && tocLines / lines.length >= 0.5) return true;
+  if (tocLines >= 2 && tocLines / lines.length >= 0.5 && !lines.some((line) => line.length >= 40 && /[。；]/.test(line))) return true;
   // 保留简短但有效的正文条款，只排除明确带页码/引导符的短目录行。
   return usefulLength < 24
     && lines.length <= 2
@@ -42,7 +41,7 @@ function stripLeadingTableOfContents(text: string): string {
       return lines.slice(i).join('\n').trim();
     }
   }
-  return text;
+  return lines.slice(tocIndex + 1).filter((line) => !TOC_LINE_RE.test(line.trim())).join('\n');
 }
 
 /** 从解析后的纯文本中识别章节结构 */
@@ -93,23 +92,32 @@ export function extractChapters(text: string): DocumentChapter[] {
     const body = text.slice(chapters[i].start, Math.min(end, chapters[i].start + 300));
     chapters[i].excerpt = body.replace(/\n+/g, ' ').trim().slice(0, 200);
   }
-  return chapters.slice(0, 200);
+  return chapters;
 }
 
 /** 将长文本按章节/长度切块，供出题采样 */
 export function splitIntoChunks(text: string, chapters: DocumentChapter[] | null, maxChunkLen = 4000): { title: string; text: string }[] {
   const chunks: { title: string; text: string }[] = [];
+  // 老文档可能仅保存了前 200 个目录条目的索引；无范围限制时从全文重新识别。
+  if (chapters === null) {
+    const refreshed = extractChapters(text);
+    if (refreshed.length > 0) {
+      const chapterChunks = splitIntoChunks(text, refreshed, maxChunkLen);
+      if (chapterChunks.length > 0) return chapterChunks;
+    }
+  }
   if (chapters && chapters.length > 0) {
     for (const ch of chapters) {
       const rawBody = text.slice(ch.start, ch.end).trim();
-      const body = stripHeadingLine(rawBody, ch.title);
-      if (isNonBodyText(body, ch.title)) continue;
+      const body = stripLeadingTableOfContents(stripHeadingLine(rawBody, ch.title))
+        .split('\n').filter((line) => !TOC_LINE_RE.test(line.trim())).join('\n').trim();
+      if (isNonBodyText(body)) continue;
       if (body.length <= maxChunkLen) {
         chunks.push({ title: ch.title, text: body });
       } else {
         for (let i = 0; i < body.length; i += maxChunkLen) {
           const part = body.slice(i, i + maxChunkLen).trim();
-          if (!isNonBodyText(part, ch.title)) chunks.push({ title: ch.title, text: part });
+          if (!isNonBodyText(part)) chunks.push({ title: ch.title, text: part });
         }
       }
     }

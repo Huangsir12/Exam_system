@@ -25,6 +25,11 @@ export const POST = withErrorHandling(async (request: Request, ctx: Ctx): Promis
 
   // 服务端时间校验（剩余时间以服务端为准）
   const now = new Date();
+  const { data: exam, error: examError } = await client.from('exams').select('status, end_time').eq('id', attempt.exam_id).single();
+  if (examError || !exam) throw new Error('获取考试状态失败，请重试');
+  if (['ended', 'archived'].includes(exam.status as string) || (exam.end_time && now >= new Date(exam.end_time as string))) {
+    return fail('考试已停止或结束，请提交已保存的答案', 410, { expired: true });
+  }
   if (now > new Date(attempt.deadline_at as string)) {
     return fail('考试时间已结束，系统将自动交卷', 410, { expired: true });
   }

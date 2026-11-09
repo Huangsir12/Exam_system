@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PAPER_MODE_LABELS, QUESTION_TYPE_LABELS, RESULT_VISIBILITY_LABELS, fmtDateTime, normalizePaperMode } from '@/lib/types';
 import { useState } from 'react';
+import { ExamLifecycleActions } from '@/components/exam-lifecycle-actions';
 
 export default function ExamSettingsPage() {
   const { exam, reload } = useExam();
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
-  const [archiving, setArchiving] = useState(false);
   const [publishingResults, setPublishingResults] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -32,22 +32,6 @@ export default function ExamSettingsPage() {
       await reload();
     } finally {
       setPublishing(false);
-    }
-  }
-
-  async function handleArchive() {
-    if (!window.confirm('归档后考试不可再修改，确认归档？')) return;
-    setArchiving(true);
-    try {
-      const res = await apiFetch(`/api/exams/${exam.id}/archive`, { method: 'POST' });
-      const json = await res.json();
-      if (json.code !== 0) {
-        setMessage(`归档失败：${json.message}`);
-        return;
-      }
-      await reload();
-    } finally {
-      setArchiving(false);
     }
   }
 
@@ -136,13 +120,11 @@ export default function ExamSettingsPage() {
             {exam.result_visibility === 'manual' && !exam.result_published && ['published', 'ongoing', 'ended'].includes(exam.status) && (
               <Button onClick={handlePublishResults} disabled={publishingResults}>手动发布成绩</Button>
             )}
-            {exam.status === 'ended' && (
-              <Button variant="outline" onClick={handleArchive} disabled={archiving}>归档考试</Button>
-            )}
             {editable && (
               <Button variant="outline" onClick={() => router.push(`/admin/exams/${exam.id}/generate`)}>智能出题</Button>
             )}
           </div>
+          <ExamLifecycleActions exam={exam} onChanged={reload} onDeleted={() => router.replace('/admin/exams')} />
           <p className="text-xs text-muted-foreground leading-relaxed">
             发布前系统会自动校验：题量与分值一致性、答案完整性、解析与知识来源、名单配置。固定试卷需先在试卷页完成确认。考试开始后试卷内容不可修改。
           </p>

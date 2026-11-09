@@ -31,7 +31,6 @@ export const PATCH = withErrorHandling(async (request: Request, ctx: Ctx): Promi
   const { data: exam, error: qErr } = await client.from('exams').select('*').eq('id', id).single();
   if (qErr || !exam) return fail('考试不存在', 404);
 
-  const started = [EXAM_STATUS.ONGOING, EXAM_STATUS.ENDED, EXAM_STATUS.ARCHIVED].includes(exam.status as never);
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   const before: Record<string, unknown> = {};
   const after: Record<string, unknown> = {};
@@ -56,7 +55,7 @@ export const PATCH = withErrorHandling(async (request: Request, ctx: Ctx): Promi
   setField('show_answer', typeof body.show_answer === 'boolean' ? body.show_answer : undefined);
   setField('show_analysis', typeof body.show_analysis === 'boolean' ? body.show_analysis : undefined);
   setField('show_source', typeof body.show_source === 'boolean' ? body.show_source : undefined);
-  if (body.status === EXAM_STATUS.PENDING) setField('status', EXAM_STATUS.PENDING);
+  if (body.status === EXAM_STATUS.PENDING && exam.status === EXAM_STATUS.DRAFT) setField('status', EXAM_STATUS.PENDING);
   if (body.status === EXAM_STATUS.DRAFT && exam.status === EXAM_STATUS.PENDING) setField('status', EXAM_STATUS.DRAFT);
 
   if (typeof body.start_time === 'string' && body.start_time) setField('start_time', new Date(body.start_time).toISOString());
@@ -95,15 +94,19 @@ export const DELETE = withErrorHandling(async (_req: Request, ctx: Ctx): Promise
   const admin = await requireAdmin();
   const { id } = await ctx.params;
   const client = getSupabaseClient();
-  const { data: exam, error: qErr } = await client.from('exams').select('status, title').eq('id', id).single();
+  const { data: exam, error: qErr } = await client.from('exams').select('status, title, generation_status').eq('id', id).single();
   if (qErr || !exam) return fail('考试不存在', 404);
   if (exam.status !== EXAM_STATUS.DRAFT) return fail('仅草稿状态的考试可以删除');
+  if (exam.generation_status === 'generating') return fail('智能出题进行中，暂不能删除', 409);
+  const { count, error: attemptsError } = await client.from('attempts').select('id', { count: 'exact', head: true }).eq('exam_id', id);
+  if (attemptsError) throw new Error(`检查答题记录失败：${attemptsError.message}`);
+  if (count) return fail('已有答题记录，不能删除，请保留或归档', 409);
 
-  // 级联删除题目与名单
-  await client.from('questions').delete().eq('exam_id', id);
-  await client.from('candidates').delete().eq('exam_id', id);
-  const { error } = await client.from('exams').delete().eq('id', id);
+  // 依赖外键级联，在单次删除中清理题目和名单，避免先删子表导致半删除。
+  const { data: deleted, error } = await client.from('exams').delete().eq('id', id)
+    .eq('status', EXAM_STATUS.DRAFT).neq('generation_status', 'generating').select('id');
   if (error) throw new Error(`删除考试失败: ${error.message}`);
+  if (!deleted?.length) return fail('考试状态已变更，请刷新后重试', 409);
 
   await writeLog({
     operatorType: 'admin',

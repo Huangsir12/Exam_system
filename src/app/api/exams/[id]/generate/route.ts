@@ -3,7 +3,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { requireAdmin, writeLog } from '@/lib/auth';
 import type { Difficulty, KnowledgeDocument, QuestionType } from '@/lib/types';
 import { dedupeQuestions, generateQuestionBatch, isSimilarToAny, QUESTION_TYPE_LABEL, type GeneratedQuestion } from '@/lib/generator';
-import { splitIntoChunks } from '@/lib/docparse';
+import { extractChapters, splitIntoChunks } from '@/lib/docparse';
 import { MIN_QUESTION_COUNT_PER_TYPE, normalizePaperMode, RANDOM_PAPER_POOL_MULTIPLIER } from '@/lib/types';
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -80,19 +80,29 @@ export async function POST(request: Request, ctx: Ctx): Promise<Response> {
   const allChunks: MaterialChunk[] = [];
   for (const doc of parsedDocs) {
     const scopeEntry = contentScope.find((s) => s.docId === doc.id);
-    let chapters = Array.isArray(doc.chapters) ? doc.chapters : [];
-    if (scopeEntry && scopeEntry.chapters.length > 0) {
-      chapters = chapters.filter((c) => scopeEntry.chapters.includes(c.title));
-    }
     const text = doc.content_text ?? '';
     if (!text) continue;
-    const chunks = splitIntoChunks(text, chapters.length > 0 ? chapters : null);
+    const refreshed = extractChapters(text);
+    let chapters = refreshed.length > 0 ? refreshed : (Array.isArray(doc.chapters) ? doc.chapters : []);
+    if (scopeEntry && scopeEntry.chapters.length > 0) {
+      const normalizeTitle = (title: string): string => title.replace(/(?:\.{3,}|…{2,}|·{3,})\s*\d*\s*$|\s+\d{1,4}\s*$/g, '').replace(/\s/g, '');
+      const selectedTitles = new Set(scopeEntry.chapters.map(normalizeTitle));
+      const selected = chapters.filter((chapter) => selectedTitles.has(normalizeTitle(chapter.title)));
+      const sourceChapters = chapters;
+      // 选中父章节时包含其正文子节，不把目录同名项当作唯一匹配。
+      chapters = chapters.filter((chapter) => selected.some((parent) => {
+        const next = sourceChapters.find((item) => item.start > parent.start && item.level <= parent.level);
+        return chapter.start >= parent.start && chapter.start < (next?.start ?? text.length);
+      }));
+      if (chapters.length === 0) continue;
+    }
+    const chunks = splitIntoChunks(text, scopeEntry?.chapters.length ? chapters : null);
     for (const c of chunks) {
       allChunks.push({ title: c.title, text: c.text, docName: doc.name, docId: doc.id });
     }
   }
   if (allChunks.length === 0) {
-    return new Response(JSON.stringify({ error: '选定内容范围内没有可用文本' }), { status: 400 });
+    return new Response(JSON.stringify({ error: '选定章节未找到有效正文，请重新解析文档后选择正文章节（不要仅选择目录）' }), { status: 400 });
   }
 
   // 将题型配置展开为 (题型 × 难度) 任务列表
